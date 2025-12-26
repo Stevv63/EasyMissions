@@ -10,21 +10,21 @@ break_stone: # Mission top-level key
 
   # Item display stuff
   name: "<gray>Stone Breaker</gray>" # Mission item display name
-  completed_name: "<green>Stone Breaker [COMPLETED]</green>" # Name when completed
+  completed_name: "<green>Stone Breaker (COMPLETED)</green>" # Name when completed, you can also use the placeholder [NAME] to add the normal name
 
-  lore: # Mission item lore
+  lore: # Mission item lore, there is a fair amount of placeholders available for you to use other than just this, check the wiki out to find a list of them
     - "<gray>Clear out the stone to make way for progress.</gray>"
     - ""
     - "<white>Progress: <green><progress></green>/<red><requirement></red></white>"
 
-  completed_lore: # Lore when completed
+  completed_lore: # Lore when completed, [LORE!] in the first line will make it the normal lore but strikethrough
     - "<gray>You have cleared the path.</gray>"
     - ""
     - "<gold>Right-click to claim!</gold>"
 
-  item_rarity: "COMMON" # The minecraft item rarity of the item (cosmetic only)
-  item_material: "PAPER" # The type of item for the mission. It's recommended to keep this at paper and use item_model to change its texture to avoid issues
-  item_model: # Custom item model, leave empty or remove if you don't wish to have a custom texture, you can use normal textures like minecraft:stone too!
+  item_rarity: "COMMON" # The minecraft item rarity of the item (cosmetic only),
+  item_material: "PAPER" # The type of item for the mission. It's recommended to keep this at paper and use item_model to change its texture to avoid issues, https://jd.papermc.io/paper/1.21.11/org/bukkit/Material.html for valid materials
+  item_model: # Custom item model, leave empty or remove if you don't wish to have a custom texture, you can use existing textures like minecraft:stone too
   completed_item_model: # Item model when completed, leave empty or remove to default to item model
 
   # Mission settings
@@ -32,9 +32,9 @@ break_stone: # Mission top-level key
   type: "break" # Mission type, see wiki for list
   requirement_min: 10 # Minimum possible requirement value
   requirement_max: 100 # Maximum possible requirement value
-  blacklisted_worlds: ["world_the_nether"] # Worlds that this mission will not work on.
+  blacklisted_worlds: ["world_the_nether"] # Worlds that this mission will not progress on.
 
-  target: # Valid targets to progress mission, depends on mission type
+  targets: # Valid targets to progress mission, what you can put here depends entirely on the selected type
     - "STONE"
     - "COBBLESTONE"
 
@@ -54,7 +54,7 @@ example_complex: # This is a complex mission minimal example, you can read more 
   name: "<gold>Complex Mission</gold>"
 
   category: "hard"
-  type: "complex_enchant" # this is the only complex type available in the normal plugin but the addon "MoreEMTypes" will add many more.
+  type: "complex_enchant" # this is the only complex type available in the plugin, addons may extend the available types and allow you to use more
 
   requirement_min: 1
   requirement_max: 1
@@ -64,4 +64,4 @@ example_complex: # This is a complex mission minimal example, you can read more 
 
 
 # Above is a minimal working complex mission, feel free to just not include the settings you don't need so you don't clutter things up.
-# Additionally, you can configure the defaults of a mission to avoid repetition.
+# Additionally, you can configure the defaults of a mission to avoid repetition. Check default.yml for that

@@ -14,21 +14,24 @@ messages:
   rand_mission_not_found: "<red>Couldn't find any mission entry in the category, make sure all configs are assigned"
   set_success: "<green>Success</green>"
 
-# Defines a category followed by its weight to be chosen when generating a random mission. Higher = more common.
+# Defines a category followed by its weight to be chosen when generating a random mission. Higher = more common
 categories:
   easy: 50
   medium: 30
   hard: 20
 
 mission:
-  # What sounds to play on mission claim
+  # What sounds to play on mission claim, leave empty to make it not play anything look at https://minecraftsounds.com/ to get sound keys and set up your pitch and volume
   claim_sound: "entity.player.levelup"
+  # The pitch to use when playing the claim sound
   claim_sound_pitch: 0.80
+  # The volume to use when playing the claim sound
   claim_sound_volume: 0.5
-  # How targets are split when using the '[target]' placeholder, this will show like target1, target2 etc., include the space
+  # How targets are split when using the '[target]' placeholder, list types command and the type list on start, this will show like target1, target2 etc., include the space
   target_splitter: ", "
-  # Number of blocks that have to be walked updating mission progress. Higher = better performance, lower = more accurate tracking.
+  # Number of blocks that have to be walked updating mission progress. Higher = better performance, lower = more accurate tracking
   update_walk: 5
+  # How often (seconds) to clear the brew cache that tracks player brewing, don't make this shorter than the time it takes to brew a potion on your server
   brew_cache_timeout: 300
 
 anti_abuse:
@@ -44,6 +47,7 @@ anti_abuse:
   recent_block_step_cache_size: 5
 
 menus:
+  # What will be displayed to the player when using the /easymissions data command.
   data_menu: |-
     <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     <gold><bold>Mission Data</bold></gold>
