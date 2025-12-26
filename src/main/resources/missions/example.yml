@@ -59,7 +59,7 @@ example_complex: # This is a complex mission minimal example, you can read more 
   requirement_min: 1
   requirement_max: 1
 
-  target:
+  targets:
     - SHARPNESS 5 DIAMOND_SWORD
 
 
