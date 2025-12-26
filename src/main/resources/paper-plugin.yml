@@ -1,0 +1,13 @@
+name: EasyMissions
+version: ${version}
+main: io.github.stev6.easymissions.EasyMissions
+api-version: '1.21'
+prefix: EasyMissions
+authors: [Stev6]
+description: Missions plugin.
+folia-supported: true
+permissions:
+  easymissions.admin:
+    description: Allows access to admin commands
+    default: op
+

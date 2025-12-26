@@ -1,0 +1,61 @@
+# EasyMissions Configuration,
+# Uses MiniMessage for coloring and placeholders.
+# Different messages have different placeholders available, see the wiki for full lists.
+
+debug: false
+
+messages:
+  reload: "<green>Reloaded successfully</green>"
+  reload_fail: "<red>An error occurred while reloading, please check the console."
+  needs_player: "<red>Only players can use this command.</red>"
+  needs_mission: "<red>You must be holding a mission with a valid config entry to use this command</red>"
+  give_mission: "<green>Successfully gave <mission> to <target></green>"
+  full_inventory: "<red>Target inventory is full.</red>"
+  rand_mission_not_found: "<red>Couldn't find any mission entry in the category, make sure all configs are assigned"
+  set_success: "<green>Success</green>"
+
+# Defines a category followed by its weight to be chosen when generating a random mission. Higher = more common.
+categories:
+  easy: 50
+  medium: 30
+  hard: 20
+
+mission:
+  # What sounds to play on mission claim
+  claim_sound: "entity.player.levelup"
+  claim_sound_pitch: 0.80
+  claim_sound_volume: 0.5
+  # How targets are split when using the '[target]' placeholder, this will show like target1, target2 etc., include the space
+  target_splitter: ", "
+  # Number of blocks that have to be walked updating mission progress. Higher = better performance, lower = more accurate tracking.
+  update_walk: 5
+  brew_cache_timeout: 300
+
+anti_abuse:
+  # Track recently placed blocks to prevent farming break missions.
+  recent_placement_cache: true
+  # Maximum size of recent placement cache. Lower = better performance, higher = safer against farming.
+  recent_placement_cache_size: 300
+  # How often (seconds) to clear the recent placement cache.
+  recent_placement_cache_timeout: 120
+  # Track player step locations to prevent farming walk missions.
+  recent_block_step_cache: true
+  # Maximum size of the player step cache (per player). Keep small for performance.
+  recent_block_step_cache_size: 5
+
+menus:
+  data_menu: |-
+    <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    <gold><bold>Mission Data</bold></gold>
+    <gray>UUID: <yellow><italic><uuid></italic></yellow>
+    <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    <gray>▸ <gold><bold>Config Entry:</bold></gold> <white><config_id></white> <click:suggest_command:'/em set entry '><hover:show_text:'<#dc2626>edit config entry'><dark_red>🖊</dark_red></hover></click>
+    <gray>▸ <gold><bold>Type:</bold></gold> <aqua><type></aqua>
+    <gray>▸ <gold><bold>Requirement:</bold></gold> <yellow><requirement></yellow> <click:suggest_command:'/em set requirement '><hover:show_text:'<#dc2626>edit requirement'><dark_red>🖊</dark_red></hover></click>
+    <gray>▸ <gold><bold>Progress:</bold></gold> <green><progress></green> <click:suggest_command:'/em set progress '><hover:show_text:'edit progress'><dark_red>🖊</dark_red></hover></click>
+    <gray>▸ <gold><bold>Completed:</bold></gold> <blue><completed></blue> <click:suggest_command:'/em set completed '><hover:show_text:'edit completed'><dark_red>🖊</dark_red></hover></click>
+
+    <hover:show_text:'<targets>'><#b91c1c><u>Hover to view targets →</u></#b91c1c></hover>
+    <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+

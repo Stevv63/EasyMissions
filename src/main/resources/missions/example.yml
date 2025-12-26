@@ -1,0 +1,67 @@
+# EasyMissions - Mission config
+# Any valid mission config file in the missions folder/directory will work. Feel free to categorize by file
+# Each top-level key is stored on the mission item. Keep the keys short
+# Because of the above, existing mission items with missing entries will not work
+# For a full explanation and list of mission types, examples, and options, read the wiki and make sure to check default.yml
+
+
+# Here is a mission that will utilize all possible options right now. Don't be afraid of how big it looks right now, it gets way shorter using defaults
+break_stone: # Mission top-level key
+
+  # Item display stuff
+  name: "<gray>Stone Breaker</gray>" # Mission item display name
+  completed_name: "<green>Stone Breaker [COMPLETED]</green>" # Name when completed
+
+  lore: # Mission item lore
+    - "<gray>Clear out the stone to make way for progress.</gray>"
+    - ""
+    - "<white>Progress: <green><progress></green>/<red><requirement></red></white>"
+
+  completed_lore: # Lore when completed
+    - "<gray>You have cleared the path.</gray>"
+    - ""
+    - "<gold>Right-click to claim!</gold>"
+
+  item_rarity: "COMMON" # The minecraft item rarity of the item (cosmetic only)
+  item_material: "PAPER" # The type of item for the mission. It's recommended to keep this at paper and use item_model to change its texture to avoid issues
+  item_model: # Custom item model, leave empty or remove if you don't wish to have a custom texture, you can use normal textures like minecraft:stone too!
+  completed_item_model: # Item model when completed, leave empty or remove to default to item model
+
+  # Mission settings
+  category: "easy" # Must match a category in config.yml
+  type: "break" # Mission type, see wiki for list
+  requirement_min: 10 # Minimum possible requirement value
+  requirement_max: 100 # Maximum possible requirement value
+  blacklisted_worlds: ["world_the_nether"] # Worlds that this mission will not work on.
+
+  target: # Valid targets to progress mission, depends on mission type
+    - "STONE"
+    - "COBBLESTONE"
+
+  # Commands to run on mission claim.
+  # "say" will send a message to the player, not the minecraft command
+  # "minecraft:say" runs the real minecraft command
+
+  rewards:
+    - "minecraft:say player completed a mission!"
+    - "say hi!"
+    - "give <player> cobblestone 64"
+
+# Above is a full, functional mission with all options that should have a requirement between 10 and 100 and progresses when a player breaks stone/cobblestone
+
+example_complex: # This is a complex mission minimal example, you can read more about it at the wiki but this is just a demonstration
+
+  name: "<gold>Complex Mission</gold>"
+
+  category: "hard"
+  type: "complex_enchant" # this is the only complex type available in the normal plugin but the addon "MoreEMTypes" will add many more.
+
+  requirement_min: 1
+  requirement_max: 1
+
+  target:
+    - SHARPNESS 5 DIAMOND_SWORD
+
+
+# Above is a minimal working complex mission, feel free to just not include the settings you don't need so you don't clutter things up.
+# Additionally, you can configure the defaults of a mission to avoid repetition.

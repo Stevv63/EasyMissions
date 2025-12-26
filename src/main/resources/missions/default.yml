@@ -1,0 +1,24 @@
+# EasyMissions default mission config
+# This is for missions with missing config entries and missing fields in mission configs.
+# You may edit anything you wish here, any missing fields in a mission config will get its field from here.
+# This file will be recreated each time it is deleted
+
+default:
+  name: "<gray>Default Mission</gray>"
+  completed_name: "<green>[NAME]</green>"
+
+  lore:
+    - "<gray>Complete the requirements to get a reward.</gray>"
+    - ""
+    - "<white>Progress: <green><progress></green>/<red><requirement></red></white>"
+
+  completed_lore:
+    - "[LORE!]" # makes completed lore normal lore but strikethrough
+
+  category: "easy"
+  item_rarity: "COMMON"
+  item_material: "PAPER"
+  custom_model_id: 100
+  completed_custom_model_id: 101
+
+
