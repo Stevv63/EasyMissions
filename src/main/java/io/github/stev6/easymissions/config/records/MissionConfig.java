@@ -39,7 +39,7 @@ public record MissionConfig(
         ItemRarity itemRarity,
         int reqMin,
         int reqMax,
-        Set<String> target,
+        Set<String> targets,
         Optional<Key> itemModel,
         Optional<Key> completedItemModel,
         Material itemMaterial,

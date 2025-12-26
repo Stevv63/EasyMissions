@@ -135,8 +135,8 @@ public class MissionManager {
             MissionType missionType = config.type();
             if (!missionType.id().equalsIgnoreCase(type)) continue;
 
-            if (missionType instanceof TargetedMissionType && !config.target().contains(target) && !config.target().contains("*")) {
-                if (!MatchWildCard.wildCardCheck(config.target(), target)) continue;
+            if (missionType instanceof TargetedMissionType && !config.targets().contains(target) && !config.targets().contains("*")) {
+                if (!MatchWildCard.wildCardCheck(config.targets(), target)) continue;
             }
 
             if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
@@ -258,7 +258,7 @@ public class MissionManager {
         return TagResolver.resolver(
                 Placeholder.unparsed("uuid", m.getUUID().toString()),
                 Placeholder.unparsed("type", c != null ? c.type().id() : "Unknown"),
-                Placeholder.unparsed("targets", c != null && c.target() != null ? String.join(plugin.getConfigManager().getMainConfig().mission().splitter(), c.target()) : "None"),
+                Placeholder.unparsed("targets", c != null && c.targets() != null ? String.join(plugin.getConfigManager().getMainConfig().mission().splitter(), c.targets()) : "None"),
                 Placeholder.unparsed("progress", String.valueOf(m.getProgress())),
                 Placeholder.unparsed("requirement", String.valueOf(m.getRequirement())),
                 Placeholder.unparsed("percentage", String.valueOf(percentage)),

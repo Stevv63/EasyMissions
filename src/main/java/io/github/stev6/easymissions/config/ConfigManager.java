@@ -233,7 +233,7 @@ public class ConfigManager {
         int reqMin = missionSection.getInt("requirement_min", 1);
         if (reqMin <= 0) reqMin = 1;
         int reqMax = missionSection.getInt("requirement_max", reqMin);
-        Set<String> target = new HashSet<>(missionSection.getStringList("target").stream().map(String::toLowerCase).toList());
+        Set<String> targets = new HashSet<>(missionSection.getStringList("targets").stream().map(String::toLowerCase).toList());
         Set<UUID> blacklistedWorlds = missionSection.getStringList("blacklisted_worlds").stream()
                 .map(s -> {
                     World world = plugin.getServer().getWorld(s);
@@ -260,8 +260,8 @@ public class ConfigManager {
         List<String> rewards = missionSection.getStringList("rewards");
 
         if (type instanceof TargetedMissionType targetedType) {
-            target = target.stream().map(targetedType::normalize).collect(Collectors.toSet());
-            for (String s : target)
+            targets = targets.stream().map(targetedType::normalize).collect(Collectors.toSet());
+            for (String s : targets)
                 if (!targetedType.validate(s))
                     throw new ConfigException("Mission " + missionSection + " has invalid target: " + s);
         }
@@ -284,7 +284,7 @@ public class ConfigManager {
                 rarity,
                 reqMin,
                 reqMax,
-                target,
+                targets,
                 itemModel,
                 completedItemModel,
                 material,
