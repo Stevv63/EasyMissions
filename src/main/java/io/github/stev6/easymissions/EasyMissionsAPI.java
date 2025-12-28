@@ -18,6 +18,10 @@
 package io.github.stev6.easymissions;
 
 import com.google.common.base.Preconditions;
+import io.github.stev6.easymissions.config.records.MainConfig;
+import io.github.stev6.easymissions.config.records.MissionConfig;
+import io.github.stev6.easymissions.mission.Mission;
+import io.github.stev6.easymissions.mission.missiontype.types.MissionType;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.entity.Player;
 import org.bukkit.event.server.ServerLoadEvent;
@@ -25,11 +29,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.Nullable;
-import io.github.stev6.easymissions.config.records.MainConfig;
-import io.github.stev6.easymissions.config.records.MissionConfig;
-import io.github.stev6.easymissions.mission.Mission;
-import io.github.stev6.easymissions.mission.missiontype.types.MissionType;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -298,7 +297,7 @@ public class EasyMissionsAPI {
     }
 
     /**
-     * Claims the mission rewards of the ItemStack
+     * Claims the mission rewards of the ItemStack, handles command execution on FoliaMC and executes commands as ConsoleSender
      *
      * @param player      player to give rewards to
      * @param missionItem the mission item
@@ -372,9 +371,8 @@ public class EasyMissionsAPI {
      */
     public LinkedHashSet<Integer> getAllMissionsSlots(Inventory inventory, Predicate<Mission> filter) {
         LinkedHashSet<Integer> indexes = new LinkedHashSet<>();
-        @Nullable ItemStack[] contents = inventory.getContents();
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack item = contents[i];
+        for (int i = 0; i < inventory.getSize(); i++) {
+            ItemStack item = inventory.getItem(i);
             if (item == null) continue;
             Optional<Mission> m = getMission(item);
             if (m.isEmpty() || !filter.test(m.get())) continue;
@@ -445,6 +443,11 @@ public class EasyMissionsAPI {
     /**
      * Overload of {@link #tryFindAndModifyMission(Player, String, String, Consumer)} Without a target, tries to find the first mission with given type, if found it applies the modifications on it
      * <p>
+     * This will respect blacklisted worlds and stop if the player is in a blacklisted world, it handles broken and
+     * missing config entries on the mission and sets their display to indicate that they're broken and handles wildcard matching.
+     * <p>
+     * Additionally, this will call the MissionProgressEvent on successful progression
+     * <p>
      * See {@link #tryFindAndModifyMission(Player, String, String, Consumer)} if you want to modify a mission with a target like a break mission
      * <p>
      * Example of usage:
@@ -466,7 +469,11 @@ public class EasyMissionsAPI {
     }
 
     /**
-     * Tries to find the first mission with given type and target string, if found it applies the modifications on it
+     * Tries to find the first mission with given type and target string, if found it applies the modifications on it.
+     * This will respect blacklisted worlds and stop if the player is in a blacklisted world, it handles broken and
+     * missing config entries on the mission and sets their display to indicate that they're broken and handles wildcard matching.
+     * <p>
+     * Additionally, this will call the MissionProgressEvent on successful progression
      * <p>
      * See {@link #tryFindAndModifyMission(Player, String, Consumer)} if you want to modify a mission without specifying a target like a walk mission
      * <p>
@@ -483,6 +490,8 @@ public class EasyMissionsAPI {
      * @param target       the target to match against the mission's valid target list
      * @param modification the modifications to apply on the mission if found
      * @throws IllegalStateException if called before the server loaded
+     * @apiNote Target strings given will always be normalized to lowercase
+     * @apiNote Only the hotbar, the inventory storage and the offhand are checked, armor slots are skipped
      */
     public void tryFindAndModifyMission(Player player, String type, String target, Consumer<Mission> modification) {
         checkMissionsLoaded();

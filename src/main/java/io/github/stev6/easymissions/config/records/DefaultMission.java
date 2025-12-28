@@ -30,5 +30,6 @@ public record DefaultMission(
         List<String> completedLore,
         String category,
         ItemRarity itemRarity,
-        Material itemMaterial) {
+        Material itemMaterial,
+        List<String> blacklistedWorlds) {
 }

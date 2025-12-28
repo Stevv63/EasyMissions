@@ -18,5 +18,6 @@ default:
   category: "easy"
   item_rarity: "COMMON"
   item_material: "PAPER"
+  blacklisted_worlds: []
 
 

@@ -25,10 +25,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.CraftItemEvent;
-import org.bukkit.event.inventory.InventoryAction;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.*;
 import org.bukkit.event.inventory.InventoryType.SlotType;
 import org.bukkit.inventory.AnvilInventory;
 import org.bukkit.inventory.GrindstoneInventory;
@@ -83,13 +80,19 @@ public record InventoryListener(MissionManager m) implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onCraft(CraftItemEvent e) {
+        if (e.getAction() == InventoryAction.NOTHING) return;
         if (e.getSlotType() != InventoryType.SlotType.RESULT) return;
         ItemStack recipeOutput = e.getCurrentItem();
         if (recipeOutput == null) return;
         if (!(e.getWhoClicked() instanceof Player p)) return;
-        final int amount = e.getClick().isShiftClick()
-                ? calculateCraft(p.getInventory(), recipeOutput.getAmount(), recipeOutput, e.getInventory().getMatrix())
-                : recipeOutput.getAmount();
+        final int amount;
+
+        if (e.getClick().isShiftClick())
+            amount = calculateCraft(p.getInventory(), recipeOutput.getAmount(), recipeOutput, true, e.getInventory().getMatrix());
+        else if (e.getClick() == ClickType.CONTROL_DROP)
+            amount = calculateCraft(p.getInventory(), recipeOutput.getAmount(), recipeOutput, false, e.getInventory().getMatrix());
+        else amount = recipeOutput.getAmount();
+
         if (amount <= 0) return;
         m.findAndModifyFirstMission(
                 p,
@@ -98,10 +101,10 @@ public record InventoryListener(MissionManager m) implements Listener {
                 mission -> mission.incrementProgress(amount));
     }
 
-    private int calculateCraft(PlayerInventory inv, int output, ItemStack result, ItemStack... matrix) {
+    private int calculateCraft(PlayerInventory inv, int output, ItemStack result, boolean checkInv, ItemStack... matrix) {
         int possible = output * Arrays.stream(matrix).filter(Objects::nonNull).mapToInt(ItemStack::getAmount).min().orElse(0);
         int availableSpace = ListenerUtils.getAvailableSpace(inv, result);
-        return Math.min(possible, availableSpace);
+        return checkInv ? Math.min(possible, availableSpace) : possible;
     }
 
 

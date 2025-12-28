@@ -199,6 +199,9 @@ public class ConfigManager {
 
         Material material = Material.matchMaterial(getConfigString(missionSection, "item_material"));
         if (material == null) throw new ConfigException("No material set in default mission");
+
+        List<String> worlds = missionSection.getStringList("blacklisted_worlds");
+
         defaultMission = new DefaultMission(
                 name,
                 completedName,
@@ -206,7 +209,8 @@ public class ConfigManager {
                 completedLore,
                 category,
                 rarity,
-                material
+                material,
+                worlds
         );
     }
 
@@ -233,7 +237,9 @@ public class ConfigManager {
         if (reqMin <= 0) reqMin = 1;
         int reqMax = missionSection.getInt("requirement_max", reqMin);
         Set<String> targets = new HashSet<>(missionSection.getStringList("targets").stream().map(String::toLowerCase).toList());
-        Set<UUID> blacklistedWorlds = missionSection.getStringList("blacklisted_worlds").stream()
+
+        List<String> worldStrings = missionSection.contains("blacklisted_worlds", true) ? missionSection.getStringList("blacklisted_worlds") : defaultMission.blacklistedWorlds();
+        Set<UUID> blacklistedWorlds = worldStrings.stream()
                 .map(s -> {
                     World world = plugin.getServer().getWorld(s);
                     if (world == null)
