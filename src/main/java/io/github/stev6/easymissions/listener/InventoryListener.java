@@ -76,7 +76,7 @@ public record InventoryListener(MissionManager m) implements Listener {
 
             int restored = getItemDurability(result) - getItemDurability(input);
 
-            m.findAndModifyFirstMission(p, Repair.INSTANCE, new ItemContext(result), mission -> mission.incrementProgress(restored));
+            m.findAndModifyFirstMission(p, Repair.INSTANCE, new ItemContext(input), mission -> mission.incrementProgress(restored));
 
             var oldEnchants = getAllEnchants(input);
             var enchants = getAllEnchants(result);
