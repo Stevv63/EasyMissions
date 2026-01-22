@@ -19,12 +19,12 @@ package io.github.stev6.easymissions;
 
 import io.github.stev6.easymissions.config.ConfigManager;
 import io.github.stev6.easymissions.config.data.MissionConfig;
+import io.github.stev6.easymissions.context.MissionContext;
 import io.github.stev6.easymissions.event.MissionClaimEvent;
 import io.github.stev6.easymissions.event.MissionProgressEvent;
 import io.github.stev6.easymissions.mission.Mission;
 import io.github.stev6.easymissions.mission.MissionPersistentDataType;
 import io.github.stev6.easymissions.option.MissionOption;
-import io.github.stev6.easymissions.context.MissionContext;
 import io.github.stev6.easymissions.type.MissionType;
 import io.github.stev6.easymissions.type.TargetedMissionType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 @ApiStatus.Internal
 public class MissionManager {
@@ -285,8 +286,8 @@ public class MissionManager {
         if (i.getPersistentDataContainer().has(invalidKey, PersistentDataType.BYTE)) return;
         if (getMissionOrNull(i) == null) return;
         i.editPersistentDataContainer(pdc -> pdc.set(invalidKey, PersistentDataType.BYTE, (byte) 1));
-        plugin.getLogger().severe("Config entry \"" + id + "\" is missing/invalid, please fix");
-        List<Component> lore = List.of(MINI_MESSAGE.deserialize("<red><st>MISSION HAS INVALID CONFIG ID</st>"));
+        plugin.getLogger().severe("Config entry \"" + id + "\" is missing/invalid, please check your config if this is not intentional!");
+        List<Component> lore = Stream.of("<red>MISSION HAS INVALID CONFIG ID: </red>" + id).map(MINI_MESSAGE::deserialize).toList();
         i.setData(DataComponentTypes.LORE, ItemLore.lore().addLines(lore).build());
         i.setData(DataComponentTypes.CUSTOM_NAME, MINI_MESSAGE.deserialize("BROKEN MISSION"));
     }
