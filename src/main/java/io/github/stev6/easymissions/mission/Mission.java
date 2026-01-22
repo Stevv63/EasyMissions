@@ -19,6 +19,7 @@
 package io.github.stev6.easymissions.mission;
 
 import com.google.common.base.Preconditions;
+import io.github.stev6.easymissions.EasyMissionsAPI;
 import io.github.stev6.easymissions.config.data.MissionConfig;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;

@@ -31,8 +31,6 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.bukkit.entity.Player;
 
-import java.util.List;
-
 public final class GiveCommand extends EasyMissionsCommand {
 
     public GiveCommand(String name, EasyMissions plugin) {

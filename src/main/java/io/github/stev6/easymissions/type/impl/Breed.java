@@ -26,8 +26,6 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
-
 public class Breed implements TargetedMissionType<EntityContext, Breed.BreedData> {
     public static final Breed INSTANCE = new Breed();
     private static final String ID = "breed";

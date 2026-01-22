@@ -4,7 +4,6 @@ import com.google.common.reflect.ClassPath;
 import io.github.stev6.easymissions.EasyMissions;
 import io.github.stev6.easymissions.registry.MissionTypeRegistry;
 import io.github.stev6.easymissions.type.MissionType;
-import org.apache.commons.lang3.reflect.MethodUtils;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;

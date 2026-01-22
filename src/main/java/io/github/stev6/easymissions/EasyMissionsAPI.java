@@ -396,15 +396,6 @@ public class EasyMissionsAPI {
         return manager.createMissionItem(config);
     }
 
-//    public static boolean invokeMethod(Object instance, String methodName, Object expected) {
-//        try {
-//            Object o = MethodUtils.invokeMethod(instance, methodName);
-//            // TODO keep working on it later
-//        } catch (Exception e) {
-//            return false;
-//        }
-//    }
-
     /**
      * Applies a modification to a mission item
      *
