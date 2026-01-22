@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Locale;
 import java.util.Set;
 
 public record EnumMatcher<E extends Enum<E>>(@NotNull Set<E> values, boolean any) implements ValueMatcher<E> {
@@ -20,7 +21,7 @@ public record EnumMatcher<E extends Enum<E>>(@NotNull Set<E> values, boolean any
         T[] allConstants = enumClass.getEnumConstants();
 
         for (String target : targets) {
-            target = target.toUpperCase().trim();
+            target = target.toUpperCase(Locale.ROOT).trim();
 
             var exact = Enums.getIfPresent(enumClass, target);
 

@@ -203,7 +203,8 @@ public class ConfigManager {
 
         for (File file : Objects.requireNonNull(files)) {
             try {
-                YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+                YamlConfiguration cfg = new YamlConfiguration();
+                cfg.load(file); // do what YamlConfiguration does in loadConfiguration but allow error to be catched
                 for (String missionEntry : cfg.getKeys(false)) {
                     ConfigurationSection missionSection = cfg.getConfigurationSection(missionEntry);
                     if (missionSection == null) continue;
@@ -222,8 +223,22 @@ public class ConfigManager {
                     }
                 }
             } catch (Exception e) {
-                plugin.getLogger().severe("Unexpected error processing file " + file.getName());
-                plugin.getLogger().log(Level.SEVERE, "Stack trace:", e);
+                final List<String> ERROR_HEADER = List.of(
+                        "========================================================",
+                        "              EasyMissions YAML READING ERROR",
+                        "              Plugin version: " + plugin.getPluginMeta().getVersion(),
+                        "",
+                        "         THIS IS NOT AN EasyMissions ERROR!",
+                        "         Please verify that your YAML file is correct.",
+                        "========================================================"
+                );
+                ERROR_HEADER.forEach(plugin.getLogger()::severe);
+                plugin.getLogger().severe("File: " + file.getName());
+                plugin.getLogger().severe("Error: " + e.getMessage());
+
+                plugin.getLogger().severe("============================================================");
+                if (plugin.isDebug()) plugin.getLogger().log(Level.SEVERE, "Stack trace:", e);
+                else plugin.getLogger().severe("Enable debug mode to see the stack trace.");
                 error.set(true);
             }
         }
@@ -394,6 +409,7 @@ public class ConfigManager {
         e.getFormattedMessage().lines().forEach(logger::severe);
         logger.severe("=======================================");
         if (plugin.isDebug()) logger.log(Level.SEVERE, "Stack trace:", e);
+        else logger.severe("Enable debug mode to see the stack trace.");
     }
 
     private void withContext(String context, Runnable action) {
