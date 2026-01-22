@@ -82,6 +82,10 @@ public class ConfigManager {
         return true;
     }
 
+    public boolean isMissionsLoaded() {
+        return missionsLoaded;
+    }
+
     public boolean loadMissions() {
         try {
             Files.createDirectories(missionDir.toPath());
@@ -117,7 +121,7 @@ public class ConfigManager {
 
             return new MainConfig.Messages(
                     section.getString("reload", "<green>Reloaded successfully</green>"),
-                    section.getString("reload_fail", "An error occurred while reloading..."),
+                    section.getString("reload_fail", "An error occurred while reloading, check the console for more info, broken configs will be roll backed..."),
                     section.getString("needs_player", "<red>Only players can use this command.</red>"),
                     section.getString("needs_mission", "<red>You must be holding a mission...</red>"),
                     section.getString("give_mission", "<green>Successfully gave <mission> to <target></green>"),
@@ -189,10 +193,6 @@ public class ConfigManager {
         parseDefaultMissionConfig(defaultSection);
     }
 
-    public boolean isMissionsLoaded() {
-        return missionsLoaded;
-    }
-
     private boolean loadMissionFiles(File missionDir, Map<String, MissionConfig> snapShot) {
         AtomicBoolean error = new AtomicBoolean(false);
         File[] files = missionDir.listFiles(f -> f.isFile() && f.getName().endsWith(".yml") && !f.getName().equals("default.yml"));
@@ -203,25 +203,24 @@ public class ConfigManager {
 
         for (File file : Objects.requireNonNull(files)) {
             try {
-                withContext("In file: " + file.getName(), () -> {
-                    YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-                    for (String missionEntry : cfg.getKeys(false)) {
-                        ConfigurationSection missionSection = cfg.getConfigurationSection(missionEntry);
-                        if (missionSection == null) continue;
-                        String key = missionSection.getName().toLowerCase(Locale.ROOT);
-                        try {
-                            withContext("Mission: " + missionEntry, () -> parseMissionConfig(missionSection));
-                        } catch (ConfigException e) {
-                            handleException(e);
-                            error.set(true);
-                            var snap = snapShot.get(key);
-                            if (snap != null) {
-                                plugin.getLogger().warning("Using old version of mission: " + key);
-                                missions.put(key, snap);
-                            }
+                YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+                for (String missionEntry : cfg.getKeys(false)) {
+                    ConfigurationSection missionSection = cfg.getConfigurationSection(missionEntry);
+                    if (missionSection == null) continue;
+                    String key = missionSection.getName().toLowerCase(Locale.ROOT);
+                    try {
+                        withContext("Mission: " + missionEntry, () -> parseMissionConfig(missionSection));
+                    } catch (ConfigException e) {
+                        e.addContext("In file: " + file.getName());
+                        error.set(true);
+                        handleException(e);
+                        var snap = snapShot.get(key);
+                        if (snap != null) {
+                            plugin.getLogger().warning("Using old version of mission: " + key);
+                            missions.put(key, snap);
                         }
                     }
-                });
+                }
             } catch (Exception e) {
                 plugin.getLogger().severe("Unexpected error processing file " + file.getName());
                 plugin.getLogger().log(Level.SEVERE, "Stack trace:", e);
@@ -377,7 +376,7 @@ public class ConfigManager {
 
     private String getConfigString(ConfigurationSection section, String path) {
         String s = section.getString(path);
-        if (s == null) throw new ConfigException("Missing String at " + section.getName() + "." + path);
+        if (s == null) throw new ConfigException("Missing field: " + path);
         return s;
     }
 

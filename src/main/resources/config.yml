@@ -6,7 +6,7 @@ debug: false
 
 messages:
   reload: "<green>Reloaded successfully</green>"
-  reload_fail: "<red>An error occurred while reloading, please check the console."
+  reload_fail: "<red>An error occurred while reloading, check the console for more info, broken configs will be roll backed</red>"
   needs_player: "<red>Only players can use this command.</red>"
   needs_mission: "<red>You must be holding a mission with a valid config entry to use this command</red>"
   give_mission: "<green>Successfully gave <mission> to <target></green>"
