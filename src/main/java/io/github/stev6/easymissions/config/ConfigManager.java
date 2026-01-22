@@ -19,15 +19,18 @@
 package io.github.stev6.easymissions.config;
 
 import io.github.stev6.easymissions.EasyMissions;
-import io.github.stev6.easymissions.config.records.DefaultMission;
-import io.github.stev6.easymissions.config.records.MainConfig;
-import io.github.stev6.easymissions.config.records.MissionConfig;
-import io.github.stev6.easymissions.exceptions.ConfigException;
-import io.github.stev6.easymissions.mission.missiontype.TargetedMissionType;
-import io.github.stev6.easymissions.mission.missiontype.types.MissionType;
-import net.kyori.adventure.key.Key;
+import io.github.stev6.easymissions.config.data.DefaultMission;
+import io.github.stev6.easymissions.config.data.MainConfig;
+import io.github.stev6.easymissions.config.data.MissionConfig;
+import io.github.stev6.easymissions.exception.ConfigException;
+import io.github.stev6.easymissions.option.MissionOption;
+import io.github.stev6.easymissions.type.MissionTarget;
+import io.github.stev6.easymissions.type.MissionType;
+import io.github.stev6.easymissions.type.TargetedMissionType;
+import io.github.stev6.easymissions.util.IntRange;
 import org.apache.commons.lang3.EnumUtils;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -35,11 +38,14 @@ import org.bukkit.generator.WorldInfo;
 import org.bukkit.inventory.ItemRarity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -68,9 +74,9 @@ public class ConfigManager {
 
     public boolean loadMain() {
         try {
-            loadMainConfig();
+            withContext("Loading main config (config.yml)", this::loadMainConfig);
         } catch (ConfigException e) {
-            handleException("While loading main config", e);
+            handleException(e);
             return false;
         }
         return true;
@@ -80,72 +86,98 @@ public class ConfigManager {
         try {
             Files.createDirectories(missionDir.toPath());
         } catch (IOException e) {
-            plugin.getLogger().severe(e.toString());
+            plugin.getLogger().severe("Could not create missions directory: " + e.getMessage());
             return false;
         }
+        Map<String, MissionConfig> snapShot = new HashMap<>(missions);
+        missions.clear();
+        missionsLoaded = false;
+
+        File defaultConfig = new File(missionDir, "default.yml");
+        if (!defaultConfig.isFile()) plugin.saveResource("missions/default.yml", false);
+
 
         try {
-            loadMissions(missionDir);
+            withContext("Loading default mission", () -> loadDefaultMission(defaultConfig));
         } catch (ConfigException e) {
-            handleException("While loading mission configs", e);
+            handleException(e);
             return false;
         }
-        return true;
+
+        boolean loaded = loadMissionFiles(missionDir, snapShot);
+        missionsLoaded = loaded;
+        return loaded;
     }
 
-    @SuppressWarnings("PatternValidation")
     private void loadMainConfig() {
 
-        ConfigurationSection messagesSection = plugin.getConfig().getConfigurationSection("messages");
-        if (messagesSection == null) throw new ConfigException("Couldn't find messages section");
+        MainConfig.Messages messages = withContext("Section: messages", () -> {
+            ConfigurationSection section = plugin.getConfig().getConfigurationSection("messages");
+            if (section == null) throw new ConfigException("Section is missing");
 
-        MainConfig.Messages messages =
-                new MainConfig.Messages(
-                        messagesSection.getString("reload", "<green>Reloaded successfully</green>"),
-                        messagesSection.getString("reload_fail", "An error occurred while reloading, please check the console."),
-                        messagesSection.getString("needs_player", "<red>Only players can use this command.</red>"),
-                        messagesSection.getString("needs_mission", "<red>You must be holding a mission to use this command</red>"),
-                        messagesSection.getString("give_mission", "<green>Successfully gave <mission> to <target></green>"),
-                        messagesSection.getString("rand_mission_not_found", "<red>Couldn't find any mission entry in the category, make sure all configs are assigned"),
-                        messagesSection.getString("set_success", "<green>Success</green>"));
+            return new MainConfig.Messages(
+                    section.getString("reload", "<green>Reloaded successfully</green>"),
+                    section.getString("reload_fail", "An error occurred while reloading..."),
+                    section.getString("needs_player", "<red>Only players can use this command.</red>"),
+                    section.getString("needs_mission", "<red>You must be holding a mission...</red>"),
+                    section.getString("give_mission", "<green>Successfully gave <mission> to <target></green>"),
+                    section.getString("rand_mission_not_found", "<red>Couldn't find any mission...</red>"),
+                    section.getString("set_success", "<green>Success</green>")
+            );
+        });
 
-        ConfigurationSection missionSection = plugin.getConfig().getConfigurationSection("mission");
-        if (missionSection == null) throw new ConfigException("Couldn't find mission section");
+        MainConfig.Mission mission = withContext("Section: mission", () -> {
+            ConfigurationSection section = plugin.getConfig().getConfigurationSection("mission");
+            if (section == null) throw new ConfigException("Section is missing");
 
-        String claimSound = missionSection.getString("claim_sound");
+            String claimSoundStr = section.getString("claim_sound");
+            @Nullable NamespacedKey claimSound = null;
+            if (claimSoundStr != null) claimSound = NamespacedKey.fromString(claimSoundStr);
 
-        MainConfig.Mission mission = new MainConfig.Mission(
-                claimSound != null ? Key.key(claimSound) : null,
-                (float) missionSection.getDouble("claim_sound_pitch", 1),
-                (float) missionSection.getDouble("claim_sound_volume", 1),
-                missionSection.getString("target_splitter", ", "),
-                missionSection.getInt("update_walk", 5),
-                missionSection.getLong("brew_cache_timeout", 300));
+            return new MainConfig.Mission(
+                    claimSound,
+                    (float) section.getDouble("claim_sound_pitch", 1),
+                    (float) section.getDouble("claim_sound_volume", 1),
+                    section.getString("target_splitter", ", "),
+                    section.getInt("update_walk", 5),
+                    section.getLong("brew_cache_timeout", 300)
+            );
+        });
 
-        ConfigurationSection antiAbuseSection = plugin.getConfig().getConfigurationSection("anti_abuse");
+        MainConfig.AntiAbuse antiAbuse = withContext("Section: anti_abuse", () -> {
+            ConfigurationSection section = plugin.getConfig().getConfigurationSection("anti_abuse");
+            if (section == null) throw new ConfigException("Section is missing");
 
-        if (antiAbuseSection == null) throw new ConfigException("Couldn't find anti abuse section");
+            return new MainConfig.AntiAbuse(
+                    section.getBoolean("recent_placement_cache", true),
+                    section.getInt("recent_placement_cache_size", 120),
+                    section.getLong("recent_placement_cache_timeout", 60),
+                    section.getBoolean("recent_block_step_cache", true),
+                    section.getInt("recent_block_step_cache_size", 5)
+            );
+        });
 
-        MainConfig.AntiAbuse antiAbuse = new MainConfig.AntiAbuse(
-                antiAbuseSection.getBoolean("recent_placement_cache", true),
-                antiAbuseSection.getInt("recent_placement_cache_size", 120),
-                antiAbuseSection.getLong("recent_placement_cache_timeout", 60),
-                antiAbuseSection.getBoolean("recent_block_step_cache", true),
-                antiAbuseSection.getInt("recent_block_step_cache_size", 5));
+        Map<String, Integer> categories = withContext("Section: categories", () -> {
+            ConfigurationSection section = plugin.getConfig().getConfigurationSection("categories");
+            if (section == null) throw new ConfigException("Section is missing");
 
-        ConfigurationSection categoriesSection = plugin.getConfig().getConfigurationSection("categories");
+            Map<String, Integer> cats = section.getKeys(false).stream().collect(Collectors.toMap(key -> key, section::getInt));
 
-        if (categoriesSection == null) throw new ConfigException("Couldn't find categories section");
+            if (cats.isEmpty()) throw new ConfigException("You must have at least one category");
 
-        Map<String, Integer> categories = categoriesSection.getKeys(false).stream().collect(Collectors.toMap(key -> key, categoriesSection::getInt));
+            for (var entry : cats.entrySet())
+                if (entry.getValue() < 0)
+                    throw new ConfigException("Category '" + entry.getKey() + "' cannot have negative weight");
 
-        if (categories.isEmpty()) throw new ConfigException("There cannot be 0 categories");
+            return cats; // meow
+        });
 
-        ConfigurationSection menusSection = plugin.getConfig().getConfigurationSection("menus");
+        MainConfig.Menus menus = withContext("Section: menus", () -> {
+            ConfigurationSection section = plugin.getConfig().getConfigurationSection("menus");
+            if (section == null) throw new ConfigException("Section is missing");
 
-        if (menusSection == null) throw new ConfigException("Couldn't find menus section");
-
-        MainConfig.Menus menus = new MainConfig.Menus(getConfigString(menusSection, "data_menu"));
+            return new MainConfig.Menus(getConfigString(section, "data_menu"));
+        });
 
         mainConfig = new MainConfig(messages, categories, mission, antiAbuse, menus);
     }
@@ -161,38 +193,50 @@ public class ConfigManager {
         return missionsLoaded;
     }
 
-    private void loadMissions(File missionDir) {
-        missions.clear();
-
+    private boolean loadMissionFiles(File missionDir, Map<String, MissionConfig> snapShot) {
+        AtomicBoolean error = new AtomicBoolean(false);
         File[] files = missionDir.listFiles(f -> f.isFile() && f.getName().endsWith(".yml") && !f.getName().equals("default.yml"));
-        if (files == null) return;
-
-        File defaultConfig = new File(missionDir, "default.yml");
-        if (!defaultConfig.isFile()) plugin.saveResource("missions/default.yml", false);
-        loadDefaultMission(defaultConfig);
-
-
-        if (files.length == 0) {
+        if (files == null || files.length == 0) {
             plugin.saveResource("missions/example.yml", false);
             files = missionDir.listFiles(f -> f.isFile() && f.getName().endsWith(".yml") && !f.getName().equals("default.yml"));
         }
 
         for (File file : Objects.requireNonNull(files)) {
-            YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-            for (String missionEntry : cfg.getKeys(false)) {
-                ConfigurationSection missionSection = cfg.getConfigurationSection(missionEntry);
-                if (missionSection == null) continue;
-                parseMissionConfig(missionSection);
+            try {
+                withContext("In file: " + file.getName(), () -> {
+                    YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+                    for (String missionEntry : cfg.getKeys(false)) {
+                        ConfigurationSection missionSection = cfg.getConfigurationSection(missionEntry);
+                        if (missionSection == null) continue;
+                        String key = missionSection.getName().toLowerCase(Locale.ROOT);
+                        try {
+                            withContext("Mission: " + missionEntry, () -> parseMissionConfig(missionSection));
+                        } catch (ConfigException e) {
+                            handleException(e);
+                            error.set(true);
+                            var snap = snapShot.get(key);
+                            if (snap != null) {
+                                plugin.getLogger().warning("Using old version of mission: " + key);
+                                missions.put(key, snap);
+                            }
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                plugin.getLogger().severe("Unexpected error processing file " + file.getName());
+                plugin.getLogger().log(Level.SEVERE, "Stack trace:", e);
+                error.set(true);
             }
         }
-        missionsLoaded = true;
+        return !error.get();
     }
 
     private void parseDefaultMissionConfig(@NotNull ConfigurationSection missionSection) {
         String name = getConfigString(missionSection, "name");
         String completedName = getConfigString(missionSection, "completed_name");
-        List<String> lore = missionSection.getStringList("lore");
-        List<String> completedLore = missionSection.getStringList("completed_lore");
+        List<String> lore = Collections.unmodifiableList(missionSection.getStringList("lore"));
+        List<String> completedLore = Collections.unmodifiableList(missionSection.getStringList("completed_lore"));
+        String requirement = getConfigString(missionSection, "requirement_range");
         String category = getConfigString(missionSection, "category");
         ItemRarity rarity = EnumUtils.getEnumIgnoreCase(ItemRarity.class, getConfigString(missionSection, "item_rarity"));
         if (rarity == null) throw new ConfigException("No item rarity set in default mission");
@@ -200,13 +244,14 @@ public class ConfigManager {
         Material material = Material.matchMaterial(getConfigString(missionSection, "item_material"));
         if (material == null) throw new ConfigException("No material set in default mission");
 
-        List<String> worlds = missionSection.getStringList("blacklisted_worlds");
+        List<String> worlds = Collections.unmodifiableList(missionSection.getStringList("blacklisted_worlds"));
 
         defaultMission = new DefaultMission(
                 name,
                 completedName,
                 lore,
                 completedLore,
+                requirement,
                 category,
                 rarity,
                 material,
@@ -214,29 +259,59 @@ public class ConfigManager {
         );
     }
 
-    @SuppressWarnings("PatternValidation")
     private void parseMissionConfig(@NotNull ConfigurationSection missionSection) {
-        if (defaultMission == null)
-            throw new ConfigException("Default mission must exist before loading normal ones.");
+        if (defaultMission == null) throw new ConfigException("Default mission must exist before loading normal ones.");
 
         String name = missionSection.getString("name", defaultMission.name());
         String completedName = missionSection.getString("completed_name", defaultMission.completedName()).replace("[NAME]", name);
 
-        List<String> lore = missionSection.contains("lore", true) ? missionSection.getStringList("lore") : defaultMission.lore();
-        List<String> completedLore = missionSection.contains("completed_lore", true) ? missionSection.getStringList("completed_lore") : defaultMission.completedLore();
+        List<String> lore = new ArrayList<>(missionSection.contains("lore", true) ? missionSection.getStringList("lore") : defaultMission.lore());
+        List<String> completedLore = new ArrayList<>(missionSection.contains("completed_lore", true) ? missionSection.getStringList("completed_lore") : defaultMission.completedLore());
 
-        if (!completedLore.isEmpty() && completedLore.getFirst().trim().equals("[LORE!]")) {
-            completedLore = lore.stream().map(s -> "<st>" + s + "</st>").toList();
+        int idx = completedLore.indexOf("[LORE!]");
+        if (idx != -1) {
+            var strLore = lore.stream().map(s -> "<st>" + s + "</st>").toList();
+            completedLore.remove(idx);
+            completedLore.addAll(idx, strLore);
         }
 
         String category = missionSection.getString("category", defaultMission.category());
-        MissionType type = plugin.getTypeRegistry().get(getConfigString(missionSection, "type").toLowerCase(Locale.ROOT));
-        if (type == null) throw new ConfigException("Invalid type at " + missionSection);
+        String typeId = getConfigString(missionSection, "type").toLowerCase(Locale.ROOT);
+        MissionType type = plugin.getTypeRegistry().get(typeId);
+        if (type == null)
+            throw new ConfigException("Invalid type id " + typeId + " check the type list to find existing id's");
+
+        ConfigurationSection dataSection = missionSection.getConfigurationSection("targets");
+        if (dataSection == null) dataSection = missionSection;
+        Optional<MissionTarget<?>> data;
+        if (type instanceof TargetedMissionType<?, ?> targetedType) {
+            ConfigurationSection finalDataSection = dataSection;
+            data = Optional.of(withContext("while parsing targets", () -> targetedType.parse(finalDataSection)));
+        } else data = Optional.empty();
+
+        ConfigurationSection optionsSection = missionSection.getConfigurationSection("custom_options");
+        List<MissionOption> options = new ArrayList<>();
+        if (optionsSection != null) {
+            for (String key : optionsSection.getKeys(false)) {
+                try {
+                    var opt = plugin.getOptionRegistry().parse(key, optionsSection.getConfigurationSection(key));
+                    if (opt != null) options.add(opt);
+                    else plugin.getLogger().warning("Invalid option '" + key + "' at " + missionSection.getName());
+                } catch (Exception e) {
+                    throw new ConfigException("while parsing option '" + key + "': " + e.getMessage(), e);
+                }
+            }
+        }
+
         ItemRarity rarity = EnumUtils.getEnumIgnoreCase(ItemRarity.class, missionSection.getString("item_rarity"), defaultMission.itemRarity());
-        int reqMin = missionSection.getInt("requirement_min", 1);
-        if (reqMin <= 0) reqMin = 1;
-        int reqMax = missionSection.getInt("requirement_max", reqMin);
-        Set<String> targets = new HashSet<>(missionSection.getStringList("targets").stream().map(String::toLowerCase).toList());
+
+        String reqRangeString = missionSection.getString("requirement_range", defaultMission.requirementRange());
+        IntRange range;
+        try {
+            range = IntRange.fromString(reqRangeString);
+        } catch (Exception e) {
+            throw new ConfigException("Invalid requirement_range '" + reqRangeString + "': " + e.getMessage());
+        }
 
         List<String> worldStrings = missionSection.contains("blacklisted_worlds", true) ? missionSection.getStringList("blacklisted_worlds") : defaultMission.blacklistedWorlds();
         Set<UUID> blacklistedWorlds = worldStrings.stream()
@@ -252,30 +327,29 @@ public class ConfigManager {
         String modelStr = missionSection.getString("item_model");
         String completedModelStr = missionSection.getString("completed_item_model");
 
-        Optional<Key> itemModel = (modelStr == null || modelStr.isBlank())
-                ? Optional.empty()
-                : Optional.of(Key.key(modelStr));
+        String task = missionSection.getString("task_description", "");
 
-        Optional<Key> completedItemModel = (completedModelStr == null || completedModelStr.isBlank())
+        Optional<NamespacedKey> itemModel = (modelStr == null || modelStr.isBlank())
+                ? Optional.empty()
+                : Optional.ofNullable(NamespacedKey.fromString(modelStr));
+
+        Optional<NamespacedKey> completedItemModel = (completedModelStr == null || completedModelStr.isBlank())
                 ? itemModel
-                : Optional.of(Key.key(completedModelStr));
+                : Optional.ofNullable(NamespacedKey.fromString(completedModelStr));
 
         String matString = missionSection.getString("item_material");
         Material material = matString != null ? Material.matchMaterial(matString) : defaultMission.itemMaterial();
         List<String> rewards = missionSection.getStringList("rewards");
 
-        if (type instanceof TargetedMissionType targetedType) {
-            targets = targets.stream().map(targetedType::normalize).collect(Collectors.toSet());
-            for (String s : targets)
-                if (!targetedType.validate(s))
-                    throw new ConfigException("Mission " + missionSection + " has invalid target: " + s);
-        }
-
         if (!mainConfig.categories().containsKey(category))
-            throw new ConfigException("Invalid category " + category + " at " + missionSection);
+            throw new ConfigException("Category '" + category + "' is not defined in config.yml categories list.");
 
-        if (reqMax < reqMin)
-            throw new ConfigException("Mission at " + missionSection + " has incorrect req min/max configuration");
+        // make all collections immutable
+        lore = Collections.unmodifiableList(lore);
+        completedLore = Collections.unmodifiableList(completedLore);
+        rewards = Collections.unmodifiableList(rewards);
+        options = Collections.unmodifiableList(options);
+        blacklistedWorlds = Collections.unmodifiableSet(blacklistedWorlds);
 
 
         MissionConfig mission = new MissionConfig(
@@ -286,10 +360,11 @@ public class ConfigManager {
                 completedLore,
                 category,
                 type,
+                task,
+                data,
+                options,
                 rarity,
-                reqMin,
-                reqMax,
-                targets,
+                range,
                 itemModel,
                 completedItemModel,
                 material,
@@ -306,17 +381,40 @@ public class ConfigManager {
         return s;
     }
 
-    private void handleException(String when, ConfigException e) {
+    private void handleException(ConfigException e) {
         Logger logger = plugin.getLogger();
-        logger.severe("=======================================");
-        logger.severe("         EasyMissions CONFIG ERROR      ");
-        logger.severe("Plugin version: " + plugin.getPluginMeta().getVersion());
-        logger.severe(when);
-        logger.severe("Please check your missions.yml or configuration folder for errors.");
-        logger.severe("---------------------------------------");
-        logger.severe("Error message: " + e.getMessage());
+
+        final List<String> ERROR_HEADER = List.of(
+                "=======================================",
+                "         EasyMissions CONFIG ERROR     ",
+                "         Plugin version: " + plugin.getPluginMeta().getVersion(),
+                "======================================="
+        );
+
+        ERROR_HEADER.forEach(logger::severe);
+        e.getFormattedMessage().lines().forEach(logger::severe);
         logger.severe("=======================================");
         if (plugin.isDebug()) logger.log(Level.SEVERE, "Stack trace:", e);
+    }
+
+    private void withContext(String context, Runnable action) {
+        try {
+            action.run();
+        } catch (ConfigException e) {
+            throw e.addContext(context);
+        } catch (Exception e) {
+            throw new ConfigException(e.getMessage(), e).addContext(context);
+        }
+    }
+
+    private <T> T withContext(String context, Callable<T> action) {
+        try {
+            return action.call();
+        } catch (ConfigException e) {
+            throw e.addContext(context);
+        } catch (Exception e) {
+            throw new ConfigException(e.getMessage(), e).addContext(context);
+        }
     }
 }
 

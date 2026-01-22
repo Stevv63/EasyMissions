@@ -18,20 +18,27 @@
 package io.github.stev6.easymissions;
 
 import com.google.common.base.Preconditions;
-import io.github.stev6.easymissions.config.records.MainConfig;
-import io.github.stev6.easymissions.config.records.MissionConfig;
+import io.github.stev6.easymissions.config.data.MainConfig;
+import io.github.stev6.easymissions.config.data.MissionConfig;
+import io.github.stev6.easymissions.context.MissionContext;
 import io.github.stev6.easymissions.mission.Mission;
-import io.github.stev6.easymissions.mission.missiontype.types.MissionType;
+import io.github.stev6.easymissions.option.MissionOption;
+import io.github.stev6.easymissions.registry.MissionTypeRegistry;
+import io.github.stev6.easymissions.type.MissionType;
+import io.github.stev6.easymissions.type.TargetedMissionType;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -59,9 +66,7 @@ public class EasyMissionsAPI {
 
     @ApiStatus.Internal
     static void init(EasyMissions plugin) {
-        if (instance != null) {
-            throw new IllegalStateException("EasyMissionsAPI already initialized");
-        }
+        Preconditions.checkState(instance == null, "API already initialized");
         instance = new EasyMissionsAPI(plugin);
     }
 
@@ -70,11 +75,95 @@ public class EasyMissionsAPI {
      *
      * @return the {@link EasyMissionsAPI} instance
      */
+    @NotNull
     public static EasyMissionsAPI getInstance() {
-        if (instance == null) {
-            throw new IllegalStateException("EasyMissionsAPI is not enabled/initialized");
-        }
+        Preconditions.checkNotNull(instance, "API not initialized");
         return instance;
+    }
+
+    /**
+     * Registers a custom {@link MissionOption}. Mission options are additional checks that can be added to any mission,
+     * such as limiting missions to players with specific permissions.
+     * <p>
+     * Registration of a {@link MissionOption} must happen <b>before</b> {@link ServerLoadEvent}, meaning during plugin
+     * startup (e.g. in {@code onEnable}).
+     *
+     * <p><b>Example Usage:</b>
+     *
+     * <pre>{@code
+     * // 1. Create your custom MissionOption
+     * package io.github.stev6.easymissions.option.impl;
+     *
+     * import io.github.stev6.easymissions.context.MissionContext;
+     * import io.github.stev6.easymissions.mission.Mission;
+     * import io.github.stev6.easymissions.option.MissionOption;
+     * import org.bukkit.configuration.ConfigurationSection;
+     * import org.bukkit.entity.Player;
+     * import org.bukkit.inventory.ItemStack;
+     * import org.jetbrains.annotations.NotNull;
+     *
+     * import java.util.HashSet;
+     * import java.util.Set;
+     *
+     * public class PermissionOption implements MissionOption {
+     *
+     *     private final Set<String> permissions;
+     *
+     *     // This constructor is required to match Function<ConfigurationSection, MissionOption>
+     *     public PermissionOption(ConfigurationSection section) {
+     *         this.permissions = new HashSet<>(section.getStringList("values"));
+     *     }
+     *
+     *     @Override
+     *     public boolean check(@NotNull Player player,
+     *                          @NotNull Mission mission,
+     *                          @NotNull ItemStack item,
+     *                          @NotNull MissionContext context) {
+     *
+     *         // generally if you dont want the permission you wont specify it thus the mission option wouldn't be created, but to be lenient we allow it if it is empty anyway
+     *         if (permissions.isEmpty()) return true;
+     *
+     *         // loop and return true if the player has at least one permission
+     *         for (String permission : permissions) {
+     *             if (player.hasPermission(permission)) {
+     *                 return true;
+     *             }
+     *         }
+     *         // if we're here, the player doesn't have any permissions but the list isn't empty so they're missing the required permissions, return false
+     *         return false;
+     *     }
+     * }
+     *
+     * // 2. Register the option during plugin startup (recommended in onEnable)
+     * @Override
+     * public void onEnable() {
+     *     EasyMissionsAPI.getInstance().registerOption("has_permission", PermissionOption::new);
+     * }
+     *
+     * // 3. Use it in missions.yml
+     * // my_mission:
+     * //   type: "break"
+     * //   targets:
+     * //     materials: [ "STONE" ]
+     * //   custom_options:
+     * //     has_permission: # <= this is what you specify in the id parameter, without it it won't work
+     * //       # The player only needs ONE of these permissions
+     * //       values:
+     * //         - "myplugin.missions.can_break_stone"
+     * //         - "myplugin.missions.is_a_miner"
+     * }</pre>
+     *
+     * @param id     The unique identifier for this option. This key is used inside the
+     *               {@code custom_options} section of a mission configuration. It is best to keep it unique to avoid conflicts.
+     * @param option A function that accepts a {@link ConfigurationSection} and returns a new
+     *               {@link MissionOption} instance. This function is invoked when a mission
+     *               configuration references this option.
+     * @throws IllegalStateException    if called after the server has finished loading.
+     * @throws IllegalArgumentException if an option with the same ID is already registered.
+     */
+    public void registerOption(@NotNull String id, @NotNull Function<ConfigurationSection, MissionOption> option) {
+        checkMissionsLoaded();
+        plugin.getOptionRegistry().register(id, option);
     }
 
     /**
@@ -85,8 +174,8 @@ public class EasyMissionsAPI {
      * @throws IllegalStateException    if called after the server loaded
      * @throws IllegalArgumentException if type ID already exists
      */
-    public void registerType(MissionType... type) {
-        Preconditions.checkState(!plugin.isServerLoaded(), "Cannot register types after server load");
+    public void registerType(@NotNull MissionType... type) {
+        checkMissionsLoaded();
         registry.registerType(type);
     }
 
@@ -98,8 +187,22 @@ public class EasyMissionsAPI {
      *
      * @return {@code Map<String, MissionType>} containing all {@link MissionType}s
      */
+    @NotNull
     public Map<String, MissionType> getAllTypes() {
         return registry.types();
+    }
+
+    /**
+     * Gets all available {@link MissionOption}s
+     * <p>
+     * Third party {@link MissionOption}s may not be available yet, schedule your call to run on the next tick
+     * or {@link ServerLoadEvent} or in a context where the server has loaded to ensure all options are loaded
+     *
+     * @return {@code Map<String, Function<ConfigurationSection, MissionOption>>} containing all {@link MissionOption}s
+     */
+    @NotNull
+    public Map<String, Function<ConfigurationSection, MissionOption>> getAllOptions() {
+        return plugin.getOptionRegistry().options();
     }
 
     /**
@@ -111,7 +214,8 @@ public class EasyMissionsAPI {
      * @param id the type's ID
      * @return {@code Optional<MissionType>} containing/not containing the {@link MissionType}
      */
-    public Optional<MissionType> getType(String id) {
+    @NotNull
+    public Optional<MissionType> getType(@NotNull String id) {
         return Optional.ofNullable(registry.get(id));
     }
 
@@ -122,7 +226,8 @@ public class EasyMissionsAPI {
      * @return {@code Optional<MissionConfig>} containing/not containing the {@link MissionConfig}
      * @throws IllegalStateException if called before the server loaded
      */
-    public Optional<MissionConfig> getMissionConfig(Mission mission) {
+    @NotNull
+    public Optional<MissionConfig> getMissionConfig(@NotNull Mission mission) {
         checkMissionsLoaded();
         return getMissionConfig(mission.getConfigID());
     }
@@ -135,7 +240,7 @@ public class EasyMissionsAPI {
      * {@code false} if it's not
      * @throws IllegalStateException if called before the server loaded
      */
-    public boolean isValidMissionId(String id) {
+    public boolean isValidMissionId(@NotNull String id) {
         checkMissionsLoaded();
         return getMissionConfig(id).isPresent();
     }
@@ -147,7 +252,8 @@ public class EasyMissionsAPI {
      * @return {@code Optional<MissionConfig>} containing/not containing the {@link MissionConfig}
      * @throws IllegalStateException if called before the server loaded
      */
-    public Optional<MissionConfig> getMissionConfig(String id) {
+    @NotNull
+    public Optional<MissionConfig> getMissionConfig(@NotNull String id) {
         checkMissionsLoaded();
         return Optional.ofNullable(plugin.getConfigManager().getMissions().get(id));
     }
@@ -158,7 +264,8 @@ public class EasyMissionsAPI {
      * @param item the item to get from
      * @return {@code Optional<Mission>} containing/not containing the mission object
      */
-    public Optional<Mission> getMission(ItemStack item) {
+    @NotNull
+    public Optional<Mission> getMission(@NotNull ItemStack item) {
         return Optional.ofNullable(manager.getMissionOrNull(item));
     }
 
@@ -170,6 +277,7 @@ public class EasyMissionsAPI {
      * @return {@code Map<String, MissionConfig}
      * @throws IllegalStateException if called before the server loaded
      */
+    @NotNull
     public Map<String, MissionConfig> getMissionConfigs() {
         checkMissionsLoaded();
         return plugin.getConfigManager().getMissions();
@@ -181,6 +289,7 @@ public class EasyMissionsAPI {
      * @return {@code Optional<MissionConfig>} containing/not containing the {@link MissionConfig}
      * @throws IllegalStateException if called before the server loaded
      */
+    @NotNull
     public Optional<MissionConfig> getRandomMission() {
         checkMissionsLoaded();
         return Optional.ofNullable(manager.weightedRandomMission(getCategories()));
@@ -192,7 +301,8 @@ public class EasyMissionsAPI {
      * @param category the category {@link String}
      * @return {@code Optional<MissionConfig>} containing/not containing the {@link MissionConfig}
      */
-    public Optional<MissionConfig> getRandomMission(String category) {
+    @NotNull
+    public Optional<MissionConfig> getRandomMission(@NotNull String category) {
         checkMissionsLoaded();
         Preconditions.checkArgument(isValidCategory(category), "Invalid category given");
         return Optional.ofNullable(manager.categoryRandomMission(category));
@@ -205,7 +315,8 @@ public class EasyMissionsAPI {
      * @return {@code Set<MissionConfig>} that may be empty if no missions are under that category
      * @throws IllegalStateException if called before the server loaded
      */
-    public Set<MissionConfig> getMissionConfigsInCategory(String category) {
+    @NotNull
+    public Set<MissionConfig> getMissionConfigsInCategory(@NotNull String category) {
         checkMissionsLoaded();
         Preconditions.checkArgument(isValidCategory(category), "Invalid category given");
         return getMissionConfigs().values().stream()
@@ -220,7 +331,7 @@ public class EasyMissionsAPI {
      * @return {@code true} if it is valid
      * {@code false} if it isn't
      */
-    public boolean isValidCategory(String category) {
+    public boolean isValidCategory(@NotNull String category) {
         return getCategories().containsKey(category);
     }
 
@@ -230,6 +341,7 @@ public class EasyMissionsAPI {
      *
      * @return {@code Map<String, Integer>}
      */
+    @NotNull
     public Map<String, Integer> getCategories() {
         return Collections.unmodifiableMap(plugin.getConfigManager().getMainConfig().categories());
     }
@@ -253,7 +365,8 @@ public class EasyMissionsAPI {
      * @return the {@link TagResolver} containing mission placeholders
      * @throws IllegalStateException if called before the server loaded
      */
-    public TagResolver getMissionTags(Mission mission) {
+    @NotNull
+    public TagResolver getMissionTags(@NotNull Mission mission) {
         checkMissionsLoaded();
         return manager.getMissionTags(mission);
     }
@@ -266,7 +379,7 @@ public class EasyMissionsAPI {
      * {@code false} if it's not
      * @throws IllegalStateException if called before the server loaded
      */
-    public boolean isMission(ItemStack item) {
+    public boolean isMission(@NotNull ItemStack item) {
         return getMission(item).isPresent();
     }
 
@@ -277,10 +390,20 @@ public class EasyMissionsAPI {
      * @return {@link ItemStack}
      * @throws IllegalStateException if called before the server loaded
      */
-    public ItemStack createMissionItem(MissionConfig config) {
+    @NotNull
+    public ItemStack createMissionItem(@NotNull MissionConfig config) {
         checkMissionsLoaded();
         return manager.createMissionItem(config);
     }
+
+//    public static boolean invokeMethod(Object instance, String methodName, Object expected) {
+//        try {
+//            Object o = MethodUtils.invokeMethod(instance, methodName);
+//            // TODO keep working on it later
+//        } catch (Exception e) {
+//            return false;
+//        }
+//    }
 
     /**
      * Applies a modification to a mission item
@@ -291,7 +414,7 @@ public class EasyMissionsAPI {
      * {@code false} if the modification was unsuccessful
      * @throws IllegalStateException if called before the server loaded
      */
-    public boolean modifyMission(ItemStack missionItem, Consumer<Mission> modification) {
+    public boolean modifyMission(@NotNull ItemStack missionItem, @NotNull Consumer<Mission> modification) {
         checkMissionsLoaded();
         return manager.editMission(missionItem, modification);
     }
@@ -305,7 +428,7 @@ public class EasyMissionsAPI {
      * {@code false} if the item is not a mission
      * @throws IllegalStateException if called before the server loaded
      */
-    public boolean claimMissionRewards(Player player, ItemStack missionItem) {
+    public boolean claimMissionRewards(@NotNull Player player, @NotNull ItemStack missionItem) {
         checkMissionsLoaded();
         if (!isMission(missionItem)) return false;
         manager.giveRewards(missionItem, player);
@@ -321,7 +444,7 @@ public class EasyMissionsAPI {
      * @return {@code true} if found
      * {@code false} if not found
      */
-    public boolean hasMission(Player player) {
+    public boolean hasMission(@NotNull Player player) {
         return hasMission(player, m -> true);
     }
 
@@ -333,7 +456,7 @@ public class EasyMissionsAPI {
      * @return {@code true} if found
      * {@code false} if not found
      */
-    public boolean hasMission(Player player, Predicate<Mission> filter) {
+    public boolean hasMission(@NotNull Player player, @NotNull Predicate<Mission> filter) {
         return getFirstMission(player, filter).isPresent();
     }
 
@@ -343,7 +466,8 @@ public class EasyMissionsAPI {
      * @param player player to look in the inventory of
      * @return {@code List<ItemStack>} containing all missions or an empty list if none found
      */
-    public List<ItemStack> getAllMissionItems(Player player) {
+    @NotNull
+    public List<ItemStack> getAllMissionItems(@NotNull Player player) {
         PlayerInventory inventory = player.getInventory();
         return getAllMissionsSlots(inventory).stream().map(inventory::getItem).toList();
     }
@@ -356,7 +480,8 @@ public class EasyMissionsAPI {
      * @param inventory the inventory to find a mission in
      * @return {@code LinkedHashSet<Integer>} containing all slot indexes containing missions or an empty set if none.
      */
-    public LinkedHashSet<Integer> getAllMissionsSlots(Inventory inventory) {
+    @NotNull
+    public LinkedHashSet<Integer> getAllMissionsSlots(@NotNull Inventory inventory) {
         return getAllMissionsSlots(inventory, m -> true);
     }
 
@@ -369,7 +494,8 @@ public class EasyMissionsAPI {
      * @param filter    filter to match missions for, e.g, the first completed mission or only break missions
      * @return {@code LinkedHashSet<Integer>} containing all slot indexes containing missions or an empty set if none.
      */
-    public LinkedHashSet<Integer> getAllMissionsSlots(Inventory inventory, Predicate<Mission> filter) {
+    @NotNull
+    public LinkedHashSet<Integer> getAllMissionsSlots(@NotNull Inventory inventory, @NotNull Predicate<Mission> filter) {
         LinkedHashSet<Integer> indexes = new LinkedHashSet<>();
         for (int i = 0; i < inventory.getSize(); i++) {
             ItemStack item = inventory.getItem(i);
@@ -390,7 +516,7 @@ public class EasyMissionsAPI {
      * @return the index of the first mission slot or {@code -1} if not found
      * @throws IllegalStateException if called before the server loaded
      */
-    public int getFirstMissionSlot(Inventory inventory) {
+    public int getFirstMissionSlot(@NotNull Inventory inventory) {
         return getFirstMissionSlot(inventory, m -> true);
     }
 
@@ -404,7 +530,7 @@ public class EasyMissionsAPI {
      * @return the index of the first mission slot or {@code -1} if not found
      * @throws IllegalStateException if called before the server loaded
      */
-    public int getFirstMissionSlot(Inventory inventory, Predicate<Mission> filter) {
+    public int getFirstMissionSlot(@NotNull Inventory inventory, @NotNull Predicate<Mission> filter) {
         var indexes = getAllMissionsSlots(inventory, filter);
         if (indexes.isEmpty()) return -1;
         return indexes.getFirst();
@@ -419,7 +545,8 @@ public class EasyMissionsAPI {
      * @return {@code Optional<ItemStack>}
      * @throws IllegalStateException if called before the server loaded
      */
-    public Optional<ItemStack> getFirstMission(Player player) {
+    @NotNull
+    public Optional<ItemStack> getFirstMission(@NotNull Player player) {
         return getFirstMission(player, m -> true);
     }
 
@@ -433,69 +560,55 @@ public class EasyMissionsAPI {
      * @return {@code Optional<ItemStack>}
      * @throws IllegalStateException if called before the server loaded
      */
-    public Optional<ItemStack> getFirstMission(Player player, Predicate<Mission> filter) {
+    @NotNull
+    public Optional<ItemStack> getFirstMission(@NotNull Player player, @NotNull Predicate<Mission> filter) {
         checkMissionsLoaded();
         int firstSlot = getFirstMissionSlot(player.getInventory(), filter);
+        if (firstSlot == -1) return Optional.empty();
         return Optional.ofNullable(player.getInventory().getItem(firstSlot));
     }
 
 
     /**
-     * Overload of {@link #tryFindAndModifyMission(Player, String, String, Consumer)} Without a target, tries to find the first mission with given type, if found it applies the modifications on it
-     * <p>
-     * This will respect blacklisted worlds and stop if the player is in a blacklisted world, it handles broken and
-     * missing config entries on the mission and sets their display to indicate that they're broken and handles wildcard matching.
-     * <p>
-     * Additionally, this will call the MissionProgressEvent on successful progression
-     * <p>
-     * See {@link #tryFindAndModifyMission(Player, String, String, Consumer)} if you want to modify a mission with a target like a break mission
-     * <p>
-     * Example of usage:
-     * <pre>{@code
-     * // In an event listener of your own, here it is when a player trades with a villager:
-     * EasyMissionsAPI api = EasyMissionsAPI.getInstance();
-     * api.tryFindAndModifyMission(player, "trade",
-     *     mission -> mission.incrementProgress(1));
-     * }</pre>
+     * Finds the first mission in a player's inventory matching the given type and applies a modification.
+     * This is intended for simple mission types that do not require a specific context, like `walk` or `xp`.
      *
-     * @param player       the player to check
-     * @param type         the required mission type to find
-     * @param modification the modifications to apply on the mission if found
-     * @throws IllegalStateException if called before the server loaded
+     * @param player       The player to check.
+     * @param type         The {@link MissionType} to look for.
+     * @param modification The modification to apply to the mission if found (e.g., incrementing progress).
+     * @throws IllegalStateException if called before mission configurations are loaded.
      */
-    public void tryFindAndModifyMission(Player player, String type, Consumer<Mission> modification) {
+    public void findAndProgressMission(@NotNull Player player, @NotNull MissionType type, @NotNull Consumer<Mission> modification) {
         checkMissionsLoaded();
-        tryFindAndModifyMission(player, type, null, modification);
+        manager.findAndModifyFirstMission(player, type, modification);
     }
 
     /**
-     * Tries to find the first mission with given type and target string, if found it applies the modifications on it.
-     * This will respect blacklisted worlds and stop if the player is in a blacklisted world, it handles broken and
-     * missing config entries on the mission and sets their display to indicate that they're broken and handles wildcard matching.
-     * <p>
-     * Additionally, this will call the MissionProgressEvent on successful progression
-     * <p>
-     * See {@link #tryFindAndModifyMission(Player, String, Consumer)} if you want to modify a mission without specifying a target like a walk mission
+     * Finds the first mission in a player's inventory matching the type and context, then applies a modification.
+     * This is the primary method for progressing targeted missions like breaking blocks or killing entities.
      * <p>
      * Example of usage:
      * <pre>{@code
-     * // In an event listener of your own, here it is when a player tames an entity:
+     * // In a BlockBreakEvent listener:
+     * BlockBreakEvent event = ...;
+     * Player player = event.getPlayer();
+     * BlockContext context = new BlockContext(event.getBlock());
+     *
      * EasyMissionsAPI api = EasyMissionsAPI.getInstance();
-     * api.tryFindAndModifyMission(player, "tame", entity.getType().name(),
+     * api.findAndProgressMission(player, Break.INSTANCE, context,
      *     mission -> mission.incrementProgress(1));
      * }</pre>
      *
-     * @param player       the player to check
-     * @param type         the required mission type to find
-     * @param target       the target to match against the mission's valid target list
-     * @param modification the modifications to apply on the mission if found
-     * @throws IllegalStateException if called before the server loaded
-     * @apiNote Target strings given will always be normalized to lowercase
-     * @apiNote Only the hotbar, the inventory storage and the offhand are checked, armor slots are skipped
+     * @param player       The player to check.
+     * @param type         The {@link TargetedMissionType} to look for.
+     * @param context      The {@link MissionContext} providing details about the action (e.g., the block broken).
+     * @param modification The modification to apply to the mission if found.
+     * @param <C>          The type of the MissionContext.
+     * @throws IllegalStateException if called before mission configurations are loaded.
      */
-    public void tryFindAndModifyMission(Player player, String type, String target, Consumer<Mission> modification) {
+    public <C extends MissionContext> void findAndProgressMission(@NotNull Player player, @NotNull TargetedMissionType<C, ?> type, @NotNull C context, @NotNull Consumer<Mission> modification) {
         checkMissionsLoaded();
-        manager.findAndModifyFirstMission(player, type, target, modification);
+        manager.findAndModifyFirstMission(player, type, context, modification);
     }
 
 
@@ -503,8 +616,7 @@ public class EasyMissionsAPI {
      * Private helper to ensure mission access never happens before they are loaded
      */
     private void checkMissionsLoaded() {
-        if (!plugin.getConfigManager().isMissionsLoaded())
-            throw new IllegalStateException("Tried accessing mission config related method before server load");
+        Preconditions.checkState(plugin.getConfigManager().isMissionsLoaded(), "Tried accessing mission config related method before server load");
     }
 
 }

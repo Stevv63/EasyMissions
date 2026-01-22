@@ -18,20 +18,20 @@
 
 package io.github.stev6.easymissions.util;
 
-import io.github.stev6.easymissions.MissionManager;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemEnchantments;
 import io.papermc.paper.datacomponent.item.PotionContents;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -40,13 +40,6 @@ public class ListenerUtils {
     public static final int SUGARCANE_CACTUS_MAX = 3;
     public static final int BAMBOO_MAX = 16;
     public static final int CHORUS_MAX = 64; // just a safe limit
-
-    public static void incrementForEnchant(MissionManager m, Player p, Material item, Enchantment enchant, int level) {
-        var key = enchant.key().asString();
-        String complex = ComplexStringUtil.buildComplexString(key, String.valueOf(level), item.name());
-        m.findAndModifyFirstMission(p, "enchant", key, mission -> mission.incrementProgress(1));
-        m.findAndModifyFirstMission(p, "complex_enchant", complex, mission -> mission.incrementProgress(1));
-    }
 
     public static int getEnchantLevels(ItemStack i) {
         if (i == null) return 0;
@@ -85,6 +78,12 @@ public class ListenerUtils {
             case CHORUS_FLOWER, CHORUS_PLANT -> true;
             default -> false;
         };
+    }
+
+    public static List<PotionEffectType> getAllPotionEffects(ItemStack i) {
+        if (i == null) return null;
+        PotionContents data = i.getData(DataComponentTypes.POTION_CONTENTS);
+        return data != null ? data.allEffects().stream().map(PotionEffect::getType).toList() : null;
     }
 
     public static Map<Enchantment, Integer> getAllEnchants(ItemStack i) {

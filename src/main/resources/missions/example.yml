@@ -1,4 +1,4 @@
-# EasyMissions - Mission config
+  # EasyMissions - Mission config
 # Any valid mission config file in the missions folder/directory will work. Feel free to categorize by file
 # Each top-level key is stored on the mission item. Keep the keys short
 # Because of the above, existing mission items with missing entries will not work
@@ -6,14 +6,14 @@
 # This file can be deleted when you have another .yml file in the directory, it will regenerate when there is no valid mission configs in the directory
 
 # Here is a mission that will utilize all possible options right now. Don't be afraid of how big it looks right now, it gets way shorter using defaults
-break_stone: # Mission top-level key
 
+break_stone: # Mission top-level key
   # Item display stuff
   name: "<gray>Stone Breaker</gray>" # Mission item display name
-  completed_name: "<green>Stone Breaker (COMPLETED)</green>" # Name when completed, you can also use the placeholder [NAME] to add the normal name
+  completed_name: "<green>[NAME] (COMPLETED)</green>" # [NAME] will be replaced with the normal name
 
-  lore: # Mission item lore, there is a fair amount of placeholders available for you to use other than just this, check the wiki out to find a list of them
-    - "<gray>Clear out the stone to make way for progress.</gray>"
+  lore: # Mission item lore. Use <task> to display the description below, there are many other placeholders you may use, check the wiki
+    - "<task>"
     - ""
     - "<white>Progress: <green><progress></green>/<red><requirement></red></white>"
 
@@ -22,7 +22,8 @@ break_stone: # Mission top-level key
     - ""
     - "<gold>Right-click to claim!</gold>"
 
-  item_rarity: "COMMON" # The minecraft item rarity of the item (cosmetic only),
+  task_description: "Clear out the stone to make way for progress."
+  item_rarity: "COMMON" # The minecraft item rarity of the item (cosmetic only)
   item_material: "PAPER" # The type of item for the mission. It's recommended to keep this at paper and use item_model to change its texture to avoid issues, https://jd.papermc.io/paper/1.21.11/org/bukkit/Material.html for valid materials
   item_model: # Custom item model, leave empty or remove if you don't wish to have a custom texture, you can use existing textures like minecraft:stone too
   completed_item_model: # Item model when completed, leave empty or remove to default to item model
@@ -30,38 +31,18 @@ break_stone: # Mission top-level key
   # Mission settings
   category: "easy" # Must match a category in config.yml
   type: "break" # Mission type, see wiki for list
-  requirement_min: 10 # Minimum possible requirement value
-  requirement_max: 100 # Maximum possible requirement value
+  requirement_range: 4-59
   blacklisted_worlds: ["world_the_nether"] # Worlds that this mission will not progress on.
-
-  targets: # Valid targets to progress mission, what you can put here depends entirely on the selected type
-    - "STONE"
-    - "COBBLESTONE"
+  targets:
+    materials:
+      - "*_STONE" # wildcard for any block ending with stone, you can also use exact names like STONE or COBBLESTONE
 
   # Commands to run on mission claim.
   # "say" will send a message to the player, not the minecraft command
   # "minecraft:say" runs the real minecraft command
-
   rewards:
-    - "minecraft:say player completed a mission!"
-    - "say hi!"
+    - "say <green>Good job, you completed the mission yayay!"
     - "give <player> cobblestone 64"
 
-# Above is a full, functional mission with all options that should have a requirement between 10 and 100 and progresses when a player breaks stone/cobblestone
-
-example_complex: # This is a complex mission minimal example, you can read more about it at the wiki but this is just a demonstration
-
-  name: "<gold>Complex Mission</gold>"
-
-  category: "hard"
-  type: "complex_enchant" # this is the only complex type available in the plugin, addons may extend the available types and allow you to use more
-
-  requirement_min: 1
-  requirement_max: 1
-
-  targets:
-    - SHARPNESS 5 DIAMOND_SWORD
-
-
-# Above is a minimal working complex mission, feel free to just not include the settings you don't need so you don't clutter things up.
-# Additionally, you can configure the defaults of a mission to avoid repetition. Check default.yml for that
+# Above is a full, functional mission with all options that should have a requirement between 4 and 59 and progresses when a player breaks any block ending with stone.
+# Additionally, you can configure the defaults of a mission to avoid repetition and allow for better readability. Check default.yml for that

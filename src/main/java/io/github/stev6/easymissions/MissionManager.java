@@ -18,14 +18,15 @@
 package io.github.stev6.easymissions;
 
 import io.github.stev6.easymissions.config.ConfigManager;
-import io.github.stev6.easymissions.config.records.MissionConfig;
+import io.github.stev6.easymissions.config.data.MissionConfig;
 import io.github.stev6.easymissions.event.MissionClaimEvent;
 import io.github.stev6.easymissions.event.MissionProgressEvent;
 import io.github.stev6.easymissions.mission.Mission;
 import io.github.stev6.easymissions.mission.MissionPersistentDataType;
-import io.github.stev6.easymissions.mission.missiontype.TargetedMissionType;
-import io.github.stev6.easymissions.mission.missiontype.types.MissionType;
-import io.github.stev6.easymissions.util.MatchWildCard;
+import io.github.stev6.easymissions.option.MissionOption;
+import io.github.stev6.easymissions.context.MissionContext;
+import io.github.stev6.easymissions.type.MissionType;
+import io.github.stev6.easymissions.type.TargetedMissionType;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.datacomponent.item.TooltipDisplay;
@@ -43,10 +44,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 @ApiStatus.Internal
 public class MissionManager {
@@ -65,7 +66,7 @@ public class MissionManager {
 
     @SuppressWarnings("UnstableApiUsage")
     public ItemStack createMissionItem(MissionConfig config) {
-        int req = ThreadLocalRandom.current().nextInt(config.reqMin(), config.reqMax() + 1);
+        int req = config.requirementRange().random();
         Mission m = Mission.create(config.key(), req);
         ItemStack i = new ItemStack(config.itemMaterial());
 
@@ -111,14 +112,11 @@ public class MissionManager {
         return i.getPersistentDataContainer().get(dataKey, MissionPersistentDataType.INSTANCE);
     }
 
-
-    public void findAndModifyFirstMission(Player p, @NotNull String type, @NotNull Consumer<Mission> doThing) {
+    public void findAndModifyFirstMission(Player p, MissionType type, Consumer<Mission> doThing) {
         findAndModifyFirstMission(p, type, null, doThing);
     }
 
-    public void findAndModifyFirstMission(Player p, @NotNull String type, @Nullable String target, @NotNull Consumer<Mission> doThing) {
-        if (target != null) target = target.toLowerCase(Locale.ROOT);
-
+    public <C extends MissionContext> void findAndModifyFirstMission(Player p, MissionType type, C ctx, Consumer<Mission> doThing) {
         for (int idx = 0; idx < p.getInventory().getSize(); idx++) {
             if (idx == 36) idx = 40; // skip to offhand
             ItemStack i = p.getInventory().getItem(idx);
@@ -128,36 +126,50 @@ public class MissionManager {
             MissionConfig config = configManager.getMissions().get(m.getConfigID());
 
             if (config == null) {
-                handleBrokenMission(i,m.getConfigID());
+                handleBrokenMission(i, m.getConfigID());
                 continue;
             }
 
-            MissionType missionType = config.type();
-            if (!missionType.id().equalsIgnoreCase(type)) continue;
+            try {
+                if (config.type() != type) continue;
+                if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
 
-            if (missionType instanceof TargetedMissionType && !config.targets().contains(target) && !config.targets().contains("*")) {
-                if (!MatchWildCard.wildCardCheck(config.targets(), target)) continue;
-            }
+                if (type instanceof TargetedMissionType<?, ?> targetedType && config.data().isPresent()
+                        && !targetedType.matchesRaw(config.data().get(), ctx)) continue;
 
-            if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
+                boolean passedConditions = true;
 
-            int oldProgress = m.getProgress();
-            boolean oldCompleted = m.isCompleted();
+                for (MissionOption option : config.options()) {
+                    if (!option.check(p, m, i, ctx)) {
+                        passedConditions = false;
+                        break;
+                    }
+                }
 
-            doThing.accept(m);
+                if (!passedConditions) continue;
 
-            MissionProgressEvent event = new MissionProgressEvent(p, m, i, oldProgress, m.getProgress());
+                int oldProgress = m.getProgress();
+                boolean oldCompleted = m.isCompleted();
 
-            if (!event.callEvent()) {
-                m.setProgress(oldProgress);
+                doThing.accept(m);
+
+                MissionProgressEvent event = new MissionProgressEvent(p, m, i, oldProgress, m.getProgress());
+                if (!event.callEvent()) {
+                    m.setProgress(oldProgress);
+                    return;
+                }
+
+                m.setProgress(event.getNewProgress());
+                if (m.getProgress() >= m.getRequirement()) m.setCompleted(true);
+
+                if (m.getProgress() != oldProgress || m.isCompleted() != oldCompleted) {
+                    updateMissionWithDataComponents(i, m);
+                }
+
                 return;
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.SEVERE, "An unexpected error occurred while processing mission '" + config.key() + "' for player " + p.getName(), e);
             }
-
-            m.setProgress(event.getNewProgress());
-            if (m.getProgress() >= m.getRequirement()) m.setCompleted(true);
-            if (m.getProgress() != oldProgress || m.isCompleted() != oldCompleted)
-                updateMissionWithDataComponents(i, m);
-            break;
         }
     }
 
@@ -258,9 +270,10 @@ public class MissionManager {
         return TagResolver.resolver(
                 Placeholder.unparsed("uuid", m.getUUID().toString()),
                 Placeholder.unparsed("type", c != null ? c.type().id() : "Unknown"),
-                Placeholder.unparsed("targets", c != null && c.targets() != null ? String.join(plugin.getConfigManager().getMainConfig().mission().splitter(), c.targets()) : "None"),
                 Placeholder.unparsed("progress", String.valueOf(m.getProgress())),
                 Placeholder.unparsed("requirement", String.valueOf(m.getRequirement())),
+                Placeholder.unparsed("category", c != null ? c.category() : "Unknown"),
+                Placeholder.unparsed("task", c != null ? c.taskDescription() : ""),
                 Placeholder.unparsed("percentage", String.valueOf(percentage)),
                 Placeholder.unparsed("config_id", m.getConfigID()),
                 Placeholder.unparsed("completed", String.valueOf(m.isCompleted()))

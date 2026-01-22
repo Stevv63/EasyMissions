@@ -17,34 +17,29 @@
  */
 package io.github.stev6.easymissions;
 
-import io.github.stev6.easymissions.caches.BrewCache;
-import io.github.stev6.easymissions.caches.antiexploit.RecentPlaceCache;
-import io.github.stev6.easymissions.caches.antiexploit.RecentStepCache;
-import io.github.stev6.easymissions.commands.MissionCommands;
+import io.github.stev6.easymissions.cache.BrewCache;
+import io.github.stev6.easymissions.cache.antiexploit.RecentPlaceCache;
+import io.github.stev6.easymissions.cache.antiexploit.RecentStepCache;
+import io.github.stev6.easymissions.command.MissionCommands;
 import io.github.stev6.easymissions.config.ConfigManager;
-import io.github.stev6.easymissions.config.records.MainConfig;
-import io.github.stev6.easymissions.listeners.*;
-import io.github.stev6.easymissions.listeners.protection.MissionBlockPlace;
-import io.github.stev6.easymissions.listeners.protection.MissionInteract;
-import io.github.stev6.easymissions.listeners.protection.MissionInventoryResult;
-import io.github.stev6.easymissions.mission.missiontype.types.MissionType;
-import io.github.stev6.easymissions.mission.missiontype.validator.Validators;
+import io.github.stev6.easymissions.config.data.MainConfig;
+import io.github.stev6.easymissions.listener.*;
+import io.github.stev6.easymissions.listener.protection.MissionBlockPlace;
+import io.github.stev6.easymissions.listener.protection.MissionInteract;
+import io.github.stev6.easymissions.listener.protection.MissionInventoryResult;
+import io.github.stev6.easymissions.option.impl.PermissionOption;
+import io.github.stev6.easymissions.registry.MissionOptionRegistry;
+import io.github.stev6.easymissions.registry.MissionTypeRegistry;
+import io.github.stev6.easymissions.type.impl.SimpleTypes;
+import io.github.stev6.easymissions.util.ReflectionUtils;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
-import org.bukkit.Material;
-import org.bukkit.Registry;
 import org.bukkit.command.CommandSender;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.EntityType;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.ServerLoadEvent;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -52,6 +47,7 @@ import java.util.stream.Collectors;
 public class EasyMissions extends JavaPlugin implements Listener {
     private static EasyMissions plugin;
     private final MissionTypeRegistry typeRegistry = new MissionTypeRegistry();
+    private final MissionOptionRegistry optionRegistry = new MissionOptionRegistry();
     private MissionManager missionManager;
     private boolean serverLoaded = false;
     private ConfigManager configManager;
@@ -81,12 +77,13 @@ public class EasyMissions extends JavaPlugin implements Listener {
         plugin = this;
         pluginManager = getServer().getPluginManager();
         saveDefaultConfig();
-        registerTypes();
+        ReflectionUtils.registerAll(SimpleTypes.class, typeRegistry, "io.github.stev6.easymissions.type.impl", this);
         configManager = new ConfigManager(this);
         configManager.loadMain();
         initializeCaches(configManager.getMainConfig());
         missionManager = new MissionManager(this);
         registerTypeListeners();
+        optionRegistry.register("permission", PermissionOption::new);
         MissionCommands command = new MissionCommands(this);
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands ->
@@ -123,8 +120,9 @@ public class EasyMissions extends JavaPlugin implements Listener {
     }
 
     private void initializeCaches(MainConfig config) {
-        if (config.antiAbuse().recentPlacementCache())
+        if (config.antiAbuse().recentPlacementCache()) {
             recentPlaceCache = new RecentPlaceCache(config.antiAbuse().recentPlacementCacheSize(), config.antiAbuse().recentPlacementCacheTimeout());
+        }
         recentStepCache = new RecentStepCache(config.antiAbuse().recentBlockStepCacheSize());
         brewCache = new BrewCache(config.mission().brewCacheTimeOut());
     }
@@ -140,6 +138,11 @@ public class EasyMissions extends JavaPlugin implements Listener {
     }
 
     @ApiStatus.Internal
+    public MissionOptionRegistry getOptionRegistry() {
+        return optionRegistry;
+    }
+
+    @ApiStatus.Internal
     public MissionTypeRegistry getTypeRegistry() {
         return typeRegistry;
     }
@@ -147,44 +150,6 @@ public class EasyMissions extends JavaPlugin implements Listener {
     @ApiStatus.Internal
     public MissionManager getMissionManager() {
         return missionManager;
-    }
-
-    private void registerTypes() {
-        Registry<@NotNull Enchantment> enchantment = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT);
-
-        typeRegistry.registerType(
-                MissionType.matchEnum("break", Material.class),
-                MissionType.matchEnum("place", Material.class),
-                MissionType.matchEnum("fish", Material.class),
-                MissionType.matchEnum("craft", Material.class),
-                MissionType.matchEnum("harvest", Material.class),
-                MissionType.matchEnum("disenchant", Material.class),
-                MissionType.matchEnum("repair", Material.class),
-                MissionType.matchEnum("consume", Material.class),
-                MissionType.matchEnum("smelt", Material.class),
-                MissionType.matchEnum("milk", EntityType.class),
-                MissionType.matchEnum("breed", EntityType.class),
-                MissionType.matchEnum("kill", EntityType.class),
-                MissionType.matchEnum("damage", EntityType.class),
-                MissionType.matchEnum("tame", EntityType.class),
-                MissionType.matchEnum("shear", EntityType.class),
-                MissionType.matchEnum("potion", PotionType.class),
-                MissionType.matchEnum("brew", PotionType.class),
-                MissionType.matchRegistry("enchant", enchantment),
-
-                MissionType.complex(
-                        "complex_enchant",
-                        Validators.matchRegistry(enchantment),
-                        Validators.matchInt(),
-                        Validators.matchEnum(Material.class)
-                ),
-
-                MissionType.simple("walk"),
-                MissionType.simple("glide"),
-                MissionType.simple("swim"),
-                MissionType.simple("xp"),
-                MissionType.simple("trade")
-        );
     }
 
     private void registerTypeListeners() {

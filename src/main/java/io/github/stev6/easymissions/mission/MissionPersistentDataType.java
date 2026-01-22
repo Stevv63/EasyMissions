@@ -36,8 +36,7 @@ public class MissionPersistentDataType implements PersistentDataType<byte[], Mis
 
     public static final MissionPersistentDataType INSTANCE = new MissionPersistentDataType();
 
-    private MissionPersistentDataType() {
-    }
+    private MissionPersistentDataType() {}
 
     @Override
     public @NotNull Class<byte[]> getPrimitiveType() {

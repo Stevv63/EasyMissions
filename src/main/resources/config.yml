@@ -46,7 +46,7 @@ anti_abuse:
   recent_block_step_cache_size: 5
 
 menus:
-  # What will be displayed to the player when using the /easymissions data command.
+  # What will be displayed to the player when using the /easymissions matcher command.
   data_menu: |-
     <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     <gold><bold>Mission Data</bold></gold>
@@ -59,6 +59,6 @@ menus:
     <gray>▸ <gold><bold>Progress:</bold></gold> <green><progress></green> <click:suggest_command:'/em set progress '><hover:show_text:'edit progress'><dark_red>🖊</dark_red></hover></click>
     <gray>▸ <gold><bold>Completed:</bold></gold> <blue><completed></blue> <click:suggest_command:'/em set completed '><hover:show_text:'edit completed'><dark_red>🖊</dark_red></hover></click>
 
-    <hover:show_text:'<targets>'><#b91c1c><u>Hover to view targets →</u></#b91c1c></hover>
+    <hover:show_text:'<task>'><#b91c1c><u>Hover to view task →</u></#b91c1c></hover>
     <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

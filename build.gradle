@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'io.github.stev6'
-version = '0.1.0-ALPHA'
+version = '0.3.0-BETA'
 repositories {
      mavenCentral()
     maven {
@@ -15,12 +15,12 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
 }
 
 tasks {
     runServer {
-        minecraftVersion("1.21.10")
+        minecraftVersion("1.21.11")
     }
 }
 

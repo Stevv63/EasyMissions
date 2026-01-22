@@ -15,6 +15,7 @@ default:
   completed_lore:
     - "[LORE!]" # makes completed lore normal lore but strikethrough
 
+  requirement_range: 60-255
   category: "easy"
   item_rarity: "COMMON"
   item_material: "PAPER"

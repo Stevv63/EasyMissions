@@ -19,15 +19,14 @@
 package io.github.stev6.easymissions.mission;
 
 import com.google.common.base.Preconditions;
-import io.github.stev6.easymissions.EasyMissionsAPI;
-import io.github.stev6.easymissions.config.records.MissionConfig;
+import io.github.stev6.easymissions.config.data.MissionConfig;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
 /**
- * The heart of the plugin, this contains the serializable object holding all important data on the {@link org.bukkit.inventory.ItemStack}
+ * The heart of the plugin, this contains the serializable object holding all important matcher on the {@link org.bukkit.inventory.ItemStack}
  * associated with the mission
  * <p>
  * Direct changes to fields here (such as {@link #setProgress(int)} or {@link #incrementProgress(int)})will not be updated
