@@ -114,6 +114,7 @@ public class MissionManager {
     }
 
     public boolean isMission(ItemStack i) {
+        if (i == null) return false;
         return i.getPersistentDataContainer().has(dataKey);
     }
 
