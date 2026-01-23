@@ -22,7 +22,7 @@ break_stone: # Mission top-level key
     - ""
     - "<gold>Right-click to claim!</gold>"
 
-  task_description: "Clear out the stone to make way for progress."
+  task: "Clear out the stone to make way for progress." # An objective of what to do to progress the mission, useful combined with default.yml
   item_rarity: "COMMON" # The minecraft item rarity of the item (cosmetic only)
   item_material: "PAPER" # The type of item for the mission. It's recommended to keep this at paper and use item_model to change its texture to avoid issues, https://jd.papermc.io/paper/1.21.11/org/bukkit/Material.html for valid materials
   item_model: # Custom item model, leave empty or remove if you don't wish to have a custom texture, you can use existing textures like minecraft:stone too

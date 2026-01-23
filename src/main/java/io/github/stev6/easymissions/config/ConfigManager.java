@@ -341,7 +341,7 @@ public class ConfigManager {
         String modelStr = missionSection.getString("item_model");
         String completedModelStr = missionSection.getString("completed_item_model");
 
-        String task = missionSection.getString("task_description", "");
+        String task = missionSection.getString("task", "");
 
         Optional<NamespacedKey> itemModel = (modelStr == null || modelStr.isBlank())
                 ? Optional.empty()
@@ -357,6 +357,9 @@ public class ConfigManager {
 
         if (!mainConfig.categories().containsKey(category))
             throw new ConfigException("Category '" + category + "' is not defined in config.yml categories list.");
+
+        if (material == null)
+            throw new ConfigException("Invalid material '" + matString + "'");
 
         // make all collections immutable
         lore = Collections.unmodifiableList(lore);
