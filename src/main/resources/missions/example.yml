@@ -1,4 +1,4 @@
-  # EasyMissions - Mission config
+# EasyMissions - Mission config
 # Any valid mission config file in the missions folder/directory will work. Feel free to categorize by file
 # Each top-level key is stored on the mission item. Keep the keys short
 # Because of the above, existing mission items with missing entries will not work
@@ -32,11 +32,17 @@ break_stone: # Mission top-level key
   category: "easy" # Must match a category in config.yml
   type: "break" # Mission type, see wiki for list
   requirement_range: 4-59
-  blacklisted_worlds: ["world_the_nether"] # Worlds that this mission will not progress on.
-  targets:
+  blacklisted_worlds: [ "world_the_nether" ] # Worlds that this mission will not progress on.
+  targets: # section to specify conditions for mission to progress, what you can have depends on the chosen type
     materials:
       - "*_STONE" # wildcard for any block ending with stone, you can also use exact names like STONE or COBBLESTONE
 
+  # Custom options are additional settings for your mission config, other plugins can add their own options for you
+  # An existing option is the permission one, it makes the mission only work for that permission or if you have one of the permissions
+  custom_options:
+    permission:
+      values:
+        - "easymissions.break"
   # Commands to run on mission claim.
   # "say" will send a message to the player, not the minecraft command
   # "minecraft:say" runs the real minecraft command
