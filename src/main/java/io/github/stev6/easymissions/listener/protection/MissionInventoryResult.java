@@ -19,11 +19,12 @@
 package io.github.stev6.easymissions.listener.protection;
 
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
+import io.github.stev6.easymissions.MissionManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
-import io.github.stev6.easymissions.MissionManager;
 
 import java.util.Arrays;
 
@@ -31,13 +32,22 @@ public record MissionInventoryResult(MissionManager m) implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onCraftResult(PrepareItemCraftEvent e) {
-        boolean containsMissionItem = Arrays.stream(e.getInventory().getMatrix()).anyMatch(i -> i != null && m.getMissionOrNull(i) != null);
+        boolean containsMissionItem = Arrays.stream(e.getInventory().getMatrix()).anyMatch(i -> i != null && m.isMission(i));
         if (containsMissionItem) e.getInventory().setResult(null);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
+    public void onInventoryOpen(FurnaceBurnEvent e) {
+        if (m.isMission(e.getFuel())) {
+            e.setBurning(false);
+            e.setConsumeFuel(false);
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onResult(PrepareResultEvent e) {
-        boolean containsMissionItem = Arrays.stream(e.getInventory().getContents()).anyMatch(i -> i != null && m.getMissionOrNull(i) != null);
+        boolean containsMissionItem = Arrays.stream(e.getInventory().getContents()).anyMatch(i -> i != null && m.isMission(i));
         if (containsMissionItem) e.setResult(null);
     }
 }

@@ -380,7 +380,7 @@ public class EasyMissionsAPI {
      * @throws IllegalStateException if called before the server loaded
      */
     public boolean isMission(@NotNull ItemStack item) {
-        return getMission(item).isPresent();
+        return manager.isMission(item);
     }
 
     /**

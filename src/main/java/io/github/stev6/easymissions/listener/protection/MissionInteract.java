@@ -18,19 +18,28 @@
 
 package io.github.stev6.easymissions.listener.protection;
 
+import io.github.stev6.easymissions.MissionManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import io.github.stev6.easymissions.MissionManager;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 
 public record MissionInteract(MissionManager m) implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onInteract(PlayerInteractEvent e) {
         if (e.getItem() != null && e.getAction().isLeftClick()) return;
-        if (m.getMissionOrNull(e.getItem()) != null) {
+        if (m.isMission(e.getItem())) {
             e.getPlayer().clearActiveItem();
             e.setCancelled(true);
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onEntityInteract(PlayerInteractEntityEvent e) {
+        ItemStack i = e.getHand() == EquipmentSlot.OFF_HAND ? e.getPlayer().getInventory().getItemInOffHand() : e.getPlayer().getInventory().getItemInMainHand();
+        if (m.isMission(i)) e.setCancelled(true);
     }
 }

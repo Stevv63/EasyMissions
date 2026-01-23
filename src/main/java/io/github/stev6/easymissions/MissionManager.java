@@ -113,6 +113,10 @@ public class MissionManager {
         return i.getPersistentDataContainer().get(dataKey, MissionPersistentDataType.INSTANCE);
     }
 
+    public boolean isMission(ItemStack i) {
+        return i.getPersistentDataContainer().has(dataKey);
+    }
+
     public void findAndModifyFirstMission(Player p, MissionType type, Consumer<Mission> doThing) {
         findAndModifyFirstMission(p, type, null, doThing);
     }

@@ -27,7 +27,7 @@ import io.github.stev6.easymissions.MissionManager;
 public record MissionBlockPlace(MissionManager m) implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent e) {
-        if (m.getMissionOrNull(e.getItemInHand()) != null)
+        if (m.isMission(e.getItemInHand()))
             e.setCancelled(true);
     }
 }
