@@ -24,6 +24,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
+import org.bukkit.event.inventory.FurnaceStartSmeltEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 
 import java.util.Arrays;
@@ -37,7 +38,12 @@ public record MissionInventoryResult(MissionManager m) implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    public void onInventoryOpen(FurnaceBurnEvent e) {
+    public void onSmelt(FurnaceStartSmeltEvent e) {
+        if (m.isMission(e.getSource())) e.setTotalCookTime(Integer.MAX_VALUE);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onFuelPut(FurnaceBurnEvent e) {
         if (m.isMission(e.getFuel())) {
             e.setBurning(false);
             e.setConsumeFuel(false);
