@@ -20,6 +20,7 @@ package io.github.stev6.easymissions.listener;
 
 import io.github.stev6.easymissions.MissionManager;
 import io.github.stev6.easymissions.context.impl.EntityContext;
+import io.github.stev6.easymissions.context.impl.EntityDamageContext;
 import io.github.stev6.easymissions.context.impl.EntityKillContext;
 import io.github.stev6.easymissions.type.impl.*;
 import org.bukkit.Material;
@@ -49,7 +50,7 @@ public record EntityListener(MissionManager m) implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent e) {
         if (e.getDamager() instanceof Player p)
-            m.findAndModifyFirstMission(p, Damage.INSTANCE, new EntityContext(e.getEntity()), mission -> mission.incrementProgress(Math.round(((float) e.getFinalDamage()))));
+            m.findAndModifyFirstMission(p, Damage.INSTANCE, new EntityDamageContext(e.getEntity(), p.getInventory().getItemInMainHand()), mission -> mission.incrementProgress(Math.round(((float) e.getFinalDamage()))));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

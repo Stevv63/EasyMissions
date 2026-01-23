@@ -26,7 +26,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record EntityDamageContext(@NotNull Entity entity, @Nullable ItemStack weapon, int damage) implements MissionContext, Locatable {
+public record EntityDamageContext(@NotNull Entity entity, @Nullable ItemStack weapon) implements MissionContext, Locatable {
     @NotNull
     @Override
     public Location getLocation() {
