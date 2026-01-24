@@ -34,6 +34,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -272,17 +273,22 @@ public class MissionManager {
     public TagResolver getMissionTags(@NotNull Mission m) {
         int percentage = (int) ((double) m.getProgress() / m.getRequirement() * 100);
         MissionConfig c = getMissionConfigOrNull(m);
+        boolean hasConfig = c != null;
+        String category = hasConfig ? c.category() : "unknown";
+        String type = hasConfig ? c.type().id() : "unknown";
 
         return TagResolver.resolver(
                 Placeholder.unparsed("uuid", m.getUUID().toString()),
-                Placeholder.unparsed("type", c != null ? c.type().id() : "Unknown"),
+                Placeholder.unparsed("type", type),
+                Placeholder.unparsed("type_cap", StringUtils.capitalize(type)),
                 Placeholder.unparsed("progress", String.valueOf(m.getProgress())),
                 Placeholder.unparsed("requirement", String.valueOf(m.getRequirement())),
-                Placeholder.unparsed("category", c != null ? c.category() : "Unknown"),
+                Placeholder.unparsed("category", category),
+                Placeholder.unparsed("category_cap", StringUtils.capitalize(category)),
                 Placeholder.unparsed("percentage", String.valueOf(percentage)),
                 Placeholder.unparsed("config_id", m.getConfigID()),
                 Placeholder.unparsed("completed", String.valueOf(m.isCompleted())),
-                Placeholder.parsed("task", c != null ? c.taskDescription() : "")
+                Placeholder.parsed("task", hasConfig ? c.taskDescription() : "")
         );
     }
 

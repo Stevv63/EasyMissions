@@ -217,18 +217,6 @@ There are 2 aliases available and they are:
 # Placeholders
 This is the list of placeholders used in the mission config, they allow you to make detailed descriptions for your missions in their lores or names.
 
-The placeholders are:
-
->NOTE: The placeholders are ones that are wrapped in <'s, do not confuse them with ones like **[NAME]** in **completed_name** as those are keywords for the plugin to help make your life easier
-
-- **\<uuid>** The UUID of the mission
-- **\<type>** The type of the mission
-- **\<task>** A short description of what the objective of the mission is.
-- **\<progress>** The progress of the mission
-- **\<requirement>** The required progress needed for the mission to be completed
-- **\<percentage>** The completion percentage of the mission
-- **\<config_id>** The mission's top-level key AKA config ID
-- **\<completed>** Whether the mission is completed or not, will just display either "true" or "false"
-
+[Placeholders are now here](https://github.com/Stevv63/EasyMissions/wiki/Placeholders)
 ---
 
