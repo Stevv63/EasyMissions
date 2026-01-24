@@ -279,10 +279,10 @@ public class MissionManager {
                 Placeholder.unparsed("progress", String.valueOf(m.getProgress())),
                 Placeholder.unparsed("requirement", String.valueOf(m.getRequirement())),
                 Placeholder.unparsed("category", c != null ? c.category() : "Unknown"),
-                Placeholder.unparsed("task", c != null ? c.taskDescription() : ""),
                 Placeholder.unparsed("percentage", String.valueOf(percentage)),
                 Placeholder.unparsed("config_id", m.getConfigID()),
-                Placeholder.unparsed("completed", String.valueOf(m.isCompleted()))
+                Placeholder.unparsed("completed", String.valueOf(m.isCompleted())),
+                Placeholder.parsed("task", c != null ? c.taskDescription() : "")
         );
     }
 
