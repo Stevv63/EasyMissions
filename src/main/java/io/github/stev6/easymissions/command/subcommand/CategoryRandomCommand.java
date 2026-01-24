@@ -30,6 +30,8 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+
 public final class CategoryRandomCommand extends EasyMissionsCommand {
 
     public CategoryRandomCommand(String name, EasyMissions plugin) {
@@ -47,9 +49,10 @@ public final class CategoryRandomCommand extends EasyMissionsCommand {
     @Override
     public int execute(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         String category = ctx.getArgument("category", String.class);
-        Player target = ctx.getArgument("target", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource()).getFirst();
+        List<Player> targets = ctx.getArgument("target", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource());
         var manager = plugin.getMissionManager();
-        giveItem(ctx.getSource().getSender(), target, manager.categoryRandomMission(category));
+        for (Player target : targets)
+            giveItem(ctx.getSource().getSender(), target, manager.categoryRandomMission(category));
         return Command.SINGLE_SUCCESS;
     }
 }

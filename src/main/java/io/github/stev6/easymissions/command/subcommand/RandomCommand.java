@@ -22,13 +22,15 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.stev6.easymissions.EasyMissions;
+import io.github.stev6.easymissions.config.data.MissionConfig;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.bukkit.entity.Player;
-import io.github.stev6.easymissions.EasyMissions;
-import io.github.stev6.easymissions.config.data.MissionConfig;
+
+import java.util.List;
 
 public final class RandomCommand extends EasyMissionsCommand {
 
@@ -39,16 +41,16 @@ public final class RandomCommand extends EasyMissionsCommand {
     @Override
     public void addToTree(ArgumentBuilder<CommandSourceStack, ?> root) {
         root.then(Commands.literal(name)
-                .then(Commands.argument("target", ArgumentTypes.player())
+                .then(Commands.argument("target", ArgumentTypes.players())
                         .executes(this::execute)));
     }
 
     @Override
     public int execute(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         var manager = plugin.getMissionManager();
-        Player target = ctx.getArgument("target", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource()).getFirst();
+        List<Player> targets = ctx.getArgument("target", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource());
         MissionConfig config = manager.weightedRandomMission(plugin.getConfigManager().getMainConfig().categories());
-        giveItem(ctx.getSource().getSender(), target, config);
+        for (Player target : targets) giveItem(ctx.getSource().getSender(), target, config);
         return Command.SINGLE_SUCCESS;
     }
 }

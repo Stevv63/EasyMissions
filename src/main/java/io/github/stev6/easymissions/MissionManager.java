@@ -67,7 +67,7 @@ public class MissionManager {
 
     @SuppressWarnings("UnstableApiUsage")
     public ItemStack createMissionItem(MissionConfig config) {
-        int req = config.requirementRange().random();
+        int req = Math.max(1, config.requirementRange().random());
         Mission m = Mission.create(config.key(), req);
         ItemStack i = new ItemStack(config.itemMaterial());
 
