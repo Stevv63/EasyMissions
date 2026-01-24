@@ -9,12 +9,12 @@
 ## Table of Contents
 - [Important Notes](#some-things-you-need-to-know-please-read)
 - [Features](#why-choose-easymissions--features)
-  - [Mission Types](#-powerful-mission-types)
-  - [Custom Options](#-custom-mission-options)
-  - [Anti Exploit](#-anti-exploit-features)
-  - [Wildcard Targets](#-wildcard-matching-for-targets)
-  - [Mission Defaults](#-mission-defaults)
-  - [API](#-api)
+  - [Mission Types](#powerful-mission-types)
+  - [Custom Options](#custom-mission-options)
+  - [Anti Exploit](#anti-exploit-features)
+  - [Wildcard Targets](#wildcard-matching-for-targets)
+  - [Mission Defaults](#mission-defaults)
+  - [API](#api)
 - [Commands](#commands)
 - [Placeholders](#placeholders)
 
