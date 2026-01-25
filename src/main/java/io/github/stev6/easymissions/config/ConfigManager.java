@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -55,8 +54,8 @@ public class ConfigManager {
     private final Map<String, MissionConfig> missions = new HashMap<>();
     private final EasyMissions plugin;
     private final File missionDir;
+    private final Map<String, DefaultMission> defaultMissions = new HashMap<>();
     private MainConfig mainConfig;
-    private DefaultMission defaultMission;
     private boolean missionsLoaded = false;
 
     public ConfigManager(EasyMissions plugin) {
@@ -100,17 +99,17 @@ public class ConfigManager {
         File defaultConfig = new File(missionDir, "default.yml");
         if (!defaultConfig.isFile()) plugin.saveResource("missions/default.yml", false);
 
-
+        boolean defaultsLoad;
         try {
-            withContext("Loading default mission", () -> loadDefaultMission(defaultConfig));
+            defaultsLoad = withContext("Loading default missions", () -> loadDefaultMissions(defaultConfig));
         } catch (ConfigException e) {
             handleException(e);
             return false;
         }
 
-        boolean loaded = loadMissionFiles(missionDir, snapShot);
-        missionsLoaded = loaded;
-        return loaded;
+        boolean success = loadMissionFiles(missionDir, snapShot);
+        missionsLoaded = true;
+        return success && defaultsLoad;
     }
 
     private void loadMainConfig() {
@@ -186,15 +185,31 @@ public class ConfigManager {
         mainConfig = new MainConfig(messages, categories, mission, antiAbuse, menus);
     }
 
-    private void loadDefaultMission(File defaultMission) {
+    private boolean loadDefaultMissions(File defaultMission) {
         YamlConfiguration cfg = YamlConfiguration.loadConfiguration(defaultMission);
         ConfigurationSection defaultSection = cfg.getConfigurationSection("default");
         if (defaultSection == null) throw new ConfigException("No \"default\" section in default mission file");
         parseDefaultMissionConfig(defaultSection);
+        boolean error = false;
+        for (String k : cfg.getKeys(false)) {
+            if (k.equals("default")) continue;
+            ConfigurationSection section = cfg.getConfigurationSection(k);
+            if (section != null) {
+                try {
+                    withContext("Default mission: " + k, () -> parseDefaultMissionConfig(section));
+                } catch (ConfigException e) {
+                    error = true;
+                    handleException(e);
+                    plugin.getLogger().warning("Failed to parse default mission '" + k + "'. Using base default as fallback.");
+                    defaultMissions.put(k.toLowerCase(Locale.ROOT), defaultMissions.get("default"));
+                }
+            }
+        }
+        return !error;
     }
 
     private boolean loadMissionFiles(File missionDir, Map<String, MissionConfig> snapShot) {
-        AtomicBoolean error = new AtomicBoolean(false);
+        boolean error = false;
         File[] files = missionDir.listFiles(f -> f.isFile() && f.getName().endsWith(".yml") && !f.getName().equals("default.yml"));
         if (files == null || files.length == 0) {
             plugin.saveResource("missions/example.yml", false);
@@ -213,7 +228,7 @@ public class ConfigManager {
                         withContext("Mission: " + missionEntry, () -> parseMissionConfig(missionSection));
                     } catch (ConfigException e) {
                         e.addContext("In file: " + file.getName());
-                        error.set(true);
+                        error = true;
                         handleException(e);
                         var snap = snapShot.get(key);
                         if (snap != null) {
@@ -239,10 +254,10 @@ public class ConfigManager {
                 plugin.getLogger().severe("============================================================");
                 if (plugin.isDebug()) plugin.getLogger().log(Level.SEVERE, "Stack trace:", e);
                 else plugin.getLogger().severe("Enable debug mode to see the stack trace.");
-                error.set(true);
+                error = true;
             }
         }
-        return !error.get();
+        return !error;
     }
 
     private void parseDefaultMissionConfig(@NotNull ConfigurationSection missionSection) {
@@ -260,7 +275,7 @@ public class ConfigManager {
 
         List<String> worlds = Collections.unmodifiableList(missionSection.getStringList("blacklisted_worlds"));
 
-        defaultMission = new DefaultMission(
+        var defaultMission = new DefaultMission(
                 name,
                 completedName,
                 lore,
@@ -271,10 +286,15 @@ public class ConfigManager {
                 material,
                 worlds
         );
+
+        defaultMissions.put(missionSection.getName(), defaultMission);
     }
 
     private void parseMissionConfig(@NotNull ConfigurationSection missionSection) {
-        if (defaultMission == null) throw new ConfigException("Default mission must exist before loading normal ones.");
+        var defaultMissionStr = missionSection.getString("default", "default").toLowerCase(Locale.ROOT);
+        DefaultMission defaultMission = defaultMissions.get(defaultMissionStr);
+        if (defaultMission == null)
+            throw new ConfigException("Default mission: " + defaultMissionStr + " does not exist");
 
         String name = missionSection.getString("name", defaultMission.name());
         String completedName = missionSection.getString("completed_name", defaultMission.completedName()).replace("[NAME]", name);
