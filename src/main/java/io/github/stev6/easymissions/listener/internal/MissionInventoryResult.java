@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.github.stev6.easymissions.listener.protection;
+package io.github.stev6.easymissions.listener.internal;
 
 import com.destroystokyo.paper.event.inventory.PrepareResultEvent;
 import io.github.stev6.easymissions.MissionManager;

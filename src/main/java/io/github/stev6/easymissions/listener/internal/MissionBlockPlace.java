@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package io.github.stev6.easymissions.listener.protection;
+package io.github.stev6.easymissions.listener.internal;
 
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;

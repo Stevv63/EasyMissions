@@ -19,10 +19,12 @@
 package io.github.stev6.easymissions.listener;
 
 import io.github.stev6.easymissions.EasyMissions;
+import io.github.stev6.easymissions.cache.PlayerMissionCache;
 import io.github.stev6.easymissions.cache.antiexploit.RecentStepCache;
 import io.github.stev6.easymissions.type.MissionType;
 import io.github.stev6.easymissions.type.impl.SimpleTypes;
-import org.bukkit.block.Block;
+import io.github.stev6.easymissions.util.BlockPos;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,19 +33,30 @@ import org.bukkit.event.player.PlayerMoveEvent;
 
 import java.util.function.Predicate;
 
-public record MoveListener(RecentStepCache c, EasyMissions plugin) implements Listener {
+public record MoveListener(RecentStepCache stepCache, PlayerMissionCache missionCache,
+                           EasyMissions plugin) implements Listener {
 
     private void handleMove(PlayerMoveEvent e, MissionType type, Predicate<Player> condition) {
-        if (e.getFrom().getBlockX() == e.getTo().getBlockX() && e.getFrom().getBlockZ() == e.getTo().getBlockZ())
-            return;
+        Location from = e.getFrom();
+        Location to = e.getTo();
+        if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) return;
+
         Player p = e.getPlayer();
+
+        if (!missionCache.playerHasAnyMission(p)) return;
+
         if (!condition.test(p)) return;
         var mainConfig = plugin.getConfigManager().getMainConfig();
-        Block b = e.getTo().getBlock();
-        if (mainConfig.antiAbuse().recentBlockStepCache() && c.isRecentBlock(b, p.getUniqueId())) return;
+        BlockPos pos = new BlockPos(
+                to.getWorld().getUID(),
+                to.getBlockX(),
+                to.getBlockY(),
+                to.getBlockZ()
+        );
+        if (mainConfig.antiAbuse().recentBlockStepCache() && stepCache.isRecentBlock(pos, p.getUniqueId())) return;
 
-        c.add(b, p.getUniqueId());
-        RecentStepCache.WalkCache walkData = c.getWalkData(p.getUniqueId());
+        stepCache.add(pos, p.getUniqueId());
+        RecentStepCache.WalkCache walkData = stepCache.getWalkData(p.getUniqueId());
         if (++walkData.blocksWalked >= mainConfig.mission().updateWalk()) {
             plugin.getMissionManager().findAndModifyFirstMission(p, type, mission -> mission.incrementProgress(walkData.blocksWalked));
             walkData.blocksWalked = 0;

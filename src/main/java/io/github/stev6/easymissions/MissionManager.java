@@ -38,14 +38,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -110,12 +110,12 @@ public class MissionManager {
 
     @Nullable
     public Mission getMissionOrNull(ItemStack i) {
-        if (i == null) return null;
+        if (i == null || i.isEmpty()) return null;
         return i.getPersistentDataContainer().get(dataKey, MissionPersistentDataType.INSTANCE);
     }
 
     public boolean isMission(ItemStack i) {
-        if (i == null) return false;
+        if (i == null || i.isEmpty()) return false;
         return i.getPersistentDataContainer().has(dataKey);
     }
 
@@ -123,24 +123,35 @@ public class MissionManager {
         findAndModifyFirstMission(p, type, null, doThing);
     }
 
-    public <C extends MissionContext> void findAndModifyFirstMission(Player p, MissionType type, C ctx, Consumer<Mission> doThing) {
-        for (int idx = 0; idx < p.getInventory().getSize(); idx++) {
-            if (idx == 36) idx = 40; // skip to offhand
-            ItemStack i = p.getInventory().getItem(idx);
-            if (i == null) continue;
+    public NavigableMap<Integer, Mission> getMissionsInInventory(@NotNull Inventory inv, @Nullable Set<Integer> toSkip) {
+        NavigableMap<Integer, Mission> toReturn = new TreeMap<>();
+        for (int idx = 0; idx < inv.getSize(); idx++) {
+            if (toSkip != null && toSkip.contains(idx)) continue;
+            ItemStack i = inv.getItem(idx);
             Mission m = getMissionOrNull(i);
-            if (m == null || m.isCompleted()) continue;
-            MissionConfig config = configManager.getMissions().get(m.getConfigID());
+            if (m != null) toReturn.put(idx, m);
+        }
+        return toReturn;
+    }
 
-            if (config == null) {
-                handleBrokenMission(i, m.getConfigID());
-                continue;
+    public <C extends MissionContext> void findAndModifyFirstMission(Player p, MissionType type, C ctx, Consumer<Mission> doThing) {
+        var cache = plugin.getMissionCache().getCachedMissionsForPlayer(p);
+        if (cache.isEmpty()) return;
+        for (var e : cache.entrySet()) {
+            int slot = e.getKey();
+            var cachedMission = e.getValue();
+            ItemStack i = p.getInventory().getItem(slot);
+            Mission m = getMissionOrNull(i);
+            MissionConfig config = configManager.getMissions().get(cachedMission.key());
+            if (i == null || m == null) { // i null  check is to satisfsy IDE, getMissionOrNull already handles null arguments
+                plugin.getLogger().severe("Mission Cache has corrupted info, please report this to the developers");
+                plugin.getMissionCache().handlePlayer(p);
+                return;
             }
 
             try {
                 if (config.type() != type) continue;
                 if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
-
                 if (type instanceof TargetedMissionType<?, ?> targetedType && config.data().isPresent()
                         && !targetedType.matchesRaw(config.data().get(), ctx)) continue;
 
@@ -169,13 +180,12 @@ public class MissionManager {
                 m.setProgress(event.getNewProgress());
                 if (m.getProgress() >= m.getRequirement()) m.setCompleted(true);
 
-                if (m.getProgress() != oldProgress || m.isCompleted() != oldCompleted) {
-                    updateMissionWithDataComponents(i, m);
-                }
+                if (m.getProgress() != oldProgress || m.isCompleted() != oldCompleted)
+                    updateMissionData(i, m);
 
                 return;
-            } catch (Exception e) {
-                plugin.getLogger().log(Level.SEVERE, "An unexpected error occurred while processing mission '" + config.key() + "' for player " + p.getName(), e);
+            } catch (Exception ex) {
+                plugin.getLogger().log(Level.SEVERE, "An unexpected error occurred while processing mission '" + config.key() + "' for player " + p.getName(), ex);
             }
         }
     }
@@ -207,8 +217,7 @@ public class MissionManager {
         return missions.get(ThreadLocalRandom.current().nextInt(missions.size()));
     }
 
-    @SuppressWarnings("UnstableApiUsage")
-    public void updateMissionWithDataComponents(@NotNull ItemStack i, @NotNull Mission m) {
+    public void updateMissionData(@NotNull ItemStack i, @NotNull Mission m) {
         MissionConfig config = getMissionConfigOrNull(m);
         if (config == null) return;
         i.editPersistentDataContainer(pdc -> {
@@ -216,14 +225,19 @@ public class MissionManager {
             pdc.set(dataKey, MissionPersistentDataType.INSTANCE, m);
         });
 
+        updateMissionDisplay(i, m, config);
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    public void updateMissionDisplay(@NotNull ItemStack i, @NotNull Mission m, MissionConfig c) {
         TagResolver tags = getMissionTags(m);
         MiniMessage mm = MINI_MESSAGE;
 
         Component displayName = mm.deserialize(
-                m.isCompleted() ? config.completedName() : config.name(),
+                m.isCompleted() ? c.completedName() : c.name(),
                 tags);
 
-        List<Component> lore = (m.isCompleted() ? config.completedLore() : config.lore())
+        List<Component> lore = (m.isCompleted() ? c.completedLore() : c.lore())
                 .stream()
                 .map(line -> mm.deserialize(line, tags))
                 .toList();
@@ -231,7 +245,7 @@ public class MissionManager {
         i.setData(DataComponentTypes.CUSTOM_NAME, displayName);
         i.setData(DataComponentTypes.LORE, ItemLore.lore().lines(lore).build());
 
-        var optionalModel = m.isCompleted() ? config.completedItemModel() : config.itemModel();
+        var optionalModel = m.isCompleted() ? c.completedItemModel() : c.itemModel();
         optionalModel.ifPresentOrElse(
                 key -> i.setData(DataComponentTypes.ITEM_MODEL, key),
                 () -> i.setData(DataComponentTypes.ITEM_MODEL, i.getType().getKey())
@@ -266,7 +280,7 @@ public class MissionManager {
         if (oldCompleted == m.isCompleted() && m.getProgress() < m.getRequirement() && m.isCompleted())
             m.setCompleted(false);
 
-        updateMissionWithDataComponents(i, m);
+        updateMissionData(i, m);
         return true;
     }
 
@@ -293,7 +307,7 @@ public class MissionManager {
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    private void handleBrokenMission(ItemStack i, String id) {
+    public void handleBrokenMission(ItemStack i, String id) {
         if (i.getPersistentDataContainer().has(invalidKey, PersistentDataType.BYTE)) return;
         if (getMissionOrNull(i) == null) return;
         i.editPersistentDataContainer(pdc -> pdc.set(invalidKey, PersistentDataType.BYTE, (byte) 1));

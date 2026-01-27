@@ -18,21 +18,24 @@
 package io.github.stev6.easymissions;
 
 import io.github.stev6.easymissions.cache.BrewCache;
+import io.github.stev6.easymissions.cache.PlayerMissionCache;
 import io.github.stev6.easymissions.cache.antiexploit.RecentPlaceCache;
 import io.github.stev6.easymissions.cache.antiexploit.RecentStepCache;
 import io.github.stev6.easymissions.command.MissionCommands;
 import io.github.stev6.easymissions.config.ConfigManager;
 import io.github.stev6.easymissions.config.data.MainConfig;
 import io.github.stev6.easymissions.listener.*;
-import io.github.stev6.easymissions.listener.protection.MissionBlockPlace;
-import io.github.stev6.easymissions.listener.protection.MissionInteract;
-import io.github.stev6.easymissions.listener.protection.MissionInventoryResult;
+import io.github.stev6.easymissions.listener.internal.MissionBlockPlace;
+import io.github.stev6.easymissions.listener.internal.MissionCacheListener;
+import io.github.stev6.easymissions.listener.internal.MissionInteract;
+import io.github.stev6.easymissions.listener.internal.MissionInventoryResult;
 import io.github.stev6.easymissions.option.impl.PermissionOption;
 import io.github.stev6.easymissions.registry.MissionOptionRegistry;
 import io.github.stev6.easymissions.registry.MissionTypeRegistry;
 import io.github.stev6.easymissions.type.impl.SimpleTypes;
 import io.github.stev6.easymissions.util.ReflectionUtils;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -49,7 +52,7 @@ public class EasyMissions extends JavaPlugin implements Listener {
     private final MissionTypeRegistry typeRegistry = new MissionTypeRegistry();
     private final MissionOptionRegistry optionRegistry = new MissionOptionRegistry();
     private MissionManager missionManager;
-    private boolean serverLoaded = false;
+    private PlayerMissionCache missionCache;
     private ConfigManager configManager;
     private RecentPlaceCache recentPlaceCache;
     private BrewCache brewCache;
@@ -82,6 +85,7 @@ public class EasyMissions extends JavaPlugin implements Listener {
         configManager.loadMain();
         initializeCaches(configManager.getMainConfig());
         missionManager = new MissionManager(this);
+        missionCache = new PlayerMissionCache(this);
         registerTypeListeners();
         optionRegistry.register("permission", PermissionOption::new);
         MissionCommands command = new MissionCommands(this);
@@ -100,7 +104,6 @@ public class EasyMissions extends JavaPlugin implements Listener {
         String types = typeRegistry.types().keySet().stream().sorted().collect(Collectors.joining(configManager.getMainConfig().mission().splitter()));
         getLogger().info("Available types: [%s]".formatted(types));
         configManager.loadMissions();
-        serverLoaded = true;
     }
 
     @Override
@@ -128,11 +131,6 @@ public class EasyMissions extends JavaPlugin implements Listener {
     }
 
     @ApiStatus.Internal
-    public boolean isServerLoaded() {
-        return serverLoaded;
-    }
-
-    @ApiStatus.Internal
     public ConfigManager getConfigManager() {
         return configManager;
     }
@@ -148,6 +146,11 @@ public class EasyMissions extends JavaPlugin implements Listener {
     }
 
     @ApiStatus.Internal
+    public PlayerMissionCache getMissionCache() {
+        return missionCache;
+    }
+
+    @ApiStatus.Internal
     public MissionManager getMissionManager() {
         return missionManager;
     }
@@ -157,13 +160,14 @@ public class EasyMissions extends JavaPlugin implements Listener {
         pluginManager.registerEvents(new ItemListener(missionManager), this);
         pluginManager.registerEvents(new EntityListener(missionManager), this);
         pluginManager.registerEvents(new GiveRewardsListener(missionManager), this);
-        pluginManager.registerEvents(new MoveListener(recentStepCache, this), this);
+        pluginManager.registerEvents(new MoveListener(recentStepCache, missionCache, this), this);
         pluginManager.registerEvents(new BrewListener(missionManager, brewCache), this);
         pluginManager.registerEvents(new InventoryListener(missionManager), this);
         pluginManager.registerEvents(new MissionBlockPlace(missionManager), this);
         pluginManager.registerEvents(new MissionInventoryResult(missionManager), this);
         pluginManager.registerEvents(new ClaimListener(configManager), this);
         pluginManager.registerEvents(new MissionInteract(missionManager), this);
+        pluginManager.registerEvents(new MissionCacheListener(missionCache, missionManager), this);
     }
 
     public boolean isDebug() {
@@ -180,6 +184,7 @@ public class EasyMissions extends JavaPlugin implements Listener {
             recentPlaceCache.buildCache(mainConfig.antiAbuse().recentPlacementCacheSize(), mainConfig.antiAbuse().recentPlacementCacheTimeout());
         recentStepCache.buildCache(mainConfig.antiAbuse().recentBlockStepCacheSize());
         brewCache.buildCache(mainConfig.mission().brewCacheTimeOut());
+        missionCache.reloadCache(Bukkit.getOnlinePlayers());
         return loaded;
     }
 }
