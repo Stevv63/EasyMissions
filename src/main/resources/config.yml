@@ -20,6 +20,8 @@ categories:
   hard: 20
 
 mission:
+  # Whether to cache the slots that players have missions in or not, this is faster in most cases
+  cache_slots: true
   # What sounds to play on mission claim, leave empty to make it not play anything look at https://minecraftsounds.com/ to get sound keys and set up your pitch and volume
   claim_sound: "entity.player.levelup"
   # The pitch to use when playing the claim sound
