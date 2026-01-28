@@ -6,7 +6,6 @@ import io.github.stev6.easymissions.EasyMissions;
 import io.github.stev6.easymissions.MissionManager;
 import io.github.stev6.easymissions.config.data.MissionConfig;
 import io.github.stev6.easymissions.mission.Mission;
-import io.github.stev6.easymissions.type.MissionType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
@@ -16,7 +15,7 @@ import java.util.*;
 
 public class PlayerMissionCache {
     public static final Set<Integer> IGNORED_SLOTS = Set.of(36, 37, 38, 39);
-    private final Cache<UUID, NavigableMap<Integer, CachedMission>> cache;
+    private final Cache<UUID, NavigableMap<Integer, MissionConfig>> cache;
     private final MissionManager manager;
     private final EasyMissions plugin;
 
@@ -27,13 +26,13 @@ public class PlayerMissionCache {
     }
 
     @NotNull
-    public NavigableMap<Integer, CachedMission> getCachedMissionsForPlayer(Player p) {
+    public NavigableMap<Integer, MissionConfig> getCachedMissionsForPlayer(Player p) {
         var map = cache.getIfPresent(p.getUniqueId());
         return map == null ? Collections.emptyNavigableMap() : map;
     }
 
     @ApiStatus.Internal
-    public Cache<UUID, NavigableMap<Integer, CachedMission>> getCache() {
+    public Cache<UUID, NavigableMap<Integer, MissionConfig>> getCache() {
         return cache;
     }
 
@@ -44,6 +43,9 @@ public class PlayerMissionCache {
 
     public void reloadCache(Collection<? extends Player> players) {
         cache.invalidateAll();
+
+        if (!plugin.getConfigManager().getMainConfig().mission().cacheSlots()) return;
+
         for (Player p : players) {
             p.getScheduler().run(plugin, e -> handlePlayer(p), () -> {
             });
@@ -57,7 +59,7 @@ public class PlayerMissionCache {
             cache.invalidate(uuid);
             return;
         }
-        NavigableMap<Integer, CachedMission> cached = new TreeMap<>();
+        NavigableMap<Integer, MissionConfig> cached = new TreeMap<>();
         for (var e : missions.entrySet()) {
             int slot = e.getKey();
             Mission m = e.getValue();
@@ -68,15 +70,8 @@ public class PlayerMissionCache {
                 manager.handleBrokenMission(i, m.getConfigID());
                 continue;
             }
-            cached.put(slot, CachedMission.of(mConfig));
+            cached.put(slot, mConfig);
         }
         cache.put(uuid, cached);
     }
-
-    public record CachedMission(MissionType type, String key) {
-        public static CachedMission of(MissionConfig c) {
-            return new CachedMission(c.type(), c.key());
-        }
-    }
-
 }

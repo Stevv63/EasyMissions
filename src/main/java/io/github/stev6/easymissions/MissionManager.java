@@ -40,6 +40,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -109,7 +110,7 @@ public class MissionManager {
     }
 
     @Nullable
-    public Mission getMissionOrNull(ItemStack i) {
+    public Mission getMissionOrNull(@Nullable ItemStack i) {
         if (i == null || i.isEmpty()) return null;
         return i.getPersistentDataContainer().get(dataKey, MissionPersistentDataType.INSTANCE);
     }
@@ -117,10 +118,6 @@ public class MissionManager {
     public boolean isMission(ItemStack i) {
         if (i == null || i.isEmpty()) return false;
         return i.getPersistentDataContainer().has(dataKey);
-    }
-
-    public void findAndModifyFirstMission(Player p, MissionType type, Consumer<Mission> doThing) {
-        findAndModifyFirstMission(p, type, null, doThing);
     }
 
     public NavigableMap<Integer, Mission> getMissionsInInventory(@NotNull Inventory inv, @Nullable Set<Integer> toSkip) {
@@ -134,59 +131,110 @@ public class MissionManager {
         return toReturn;
     }
 
+    public void findAndModifyFirstMission(Player p, MissionType type, Consumer<Mission> doThing) {
+        findAndModifyFirstMission(p, type, null, doThing);
+    }
+
     public <C extends MissionContext> void findAndModifyFirstMission(Player p, MissionType type, C ctx, Consumer<Mission> doThing) {
+        if (configManager.getMainConfig().mission().cacheSlots())
+            findFromCache(p, type, ctx, doThing);
+        else
+            findFromInventory(p, type, ctx, doThing);
+    }
+
+    private <C extends MissionContext> void findFromCache(Player p, MissionType type, C ctx, Consumer<Mission> doThing) {
         var cache = plugin.getMissionCache().getCachedMissionsForPlayer(p);
         if (cache.isEmpty()) return;
-        for (var e : cache.entrySet()) {
-            int slot = e.getKey();
-            var cachedMission = e.getValue();
+
+        for (var entry : cache.entrySet()) {
+            int slot = entry.getKey();
+            MissionConfig config = entry.getValue();
+
+            if (config.type() != type) continue;
+
+            if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
+
+            if (type instanceof TargetedMissionType<?, ?> targetedType && config.data().isPresent()) {
+                if (!targetedType.matchesRaw(config.data().get(), ctx)) continue;
+            }
+
             ItemStack i = p.getInventory().getItem(slot);
             Mission m = getMissionOrNull(i);
-            MissionConfig config = configManager.getMissions().get(cachedMission.key());
-            if (i == null || m == null) { // i null  check is to satisfsy IDE, getMissionOrNull already handles null arguments
-                plugin.getLogger().severe("Mission Cache has corrupted info, please report this to the developers");
+
+            if (m == null || !m.getConfigID().equals(config.name())) {
+                plugin.getLogger().log(Level.SEVERE, "Cache has corrupted data for " + p.getName() + " please report this to the developers");
                 plugin.getMissionCache().handlePlayer(p);
-                return;
+                break;
             }
 
-            try {
-                if (config.type() != type) continue;
-                if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
-                if (type instanceof TargetedMissionType<?, ?> targetedType && config.data().isPresent()
-                        && !targetedType.matchesRaw(config.data().get(), ctx)) continue;
+            if (attemptMissionProgress(p, i, m, config, ctx, doThing)) return;
 
-                boolean passedConditions = true;
+        }
+    }
 
-                for (MissionOption option : config.options()) {
-                    if (!option.check(p, m, i, ctx)) {
-                        passedConditions = false;
-                        break;
-                    }
-                }
+    private <C extends MissionContext> void findFromInventory(Player p, MissionType type, C ctx, Consumer<Mission> doThing) {
+        PlayerInventory inv = p.getInventory();
+        for (int idx = 0; idx <= 40; idx++) {
+            if (idx == 36) idx = 40;
 
-                if (!passedConditions) continue;
+            ItemStack i = inv.getItem(idx);
+            Mission m = getMissionOrNull(i);
 
-                int oldProgress = m.getProgress();
-                boolean oldCompleted = m.isCompleted();
+            if (m == null || m.isCompleted() || i == null) continue;
 
-                doThing.accept(m);
-
-                MissionProgressEvent event = new MissionProgressEvent(p, m, i, oldProgress, m.getProgress());
-                if (!event.callEvent()) {
-                    m.setProgress(oldProgress);
-                    return;
-                }
-
-                m.setProgress(event.getNewProgress());
-                if (m.getProgress() >= m.getRequirement()) m.setCompleted(true);
-
-                if (m.getProgress() != oldProgress || m.isCompleted() != oldCompleted)
-                    updateMissionData(i, m);
-
-                return;
-            } catch (Exception ex) {
-                plugin.getLogger().log(Level.SEVERE, "An unexpected error occurred while processing mission '" + config.key() + "' for player " + p.getName(), ex);
+            MissionConfig config = getMissionConfigOrNull(m);
+            if (config == null) {
+                handleBrokenMission(i, m.getConfigID());
+                continue;
             }
+
+            if (config.type() != type) continue;
+
+            if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
+
+            if (type instanceof TargetedMissionType<?, ?> targetedType && config.data().isPresent()) {
+                if (!targetedType.matchesRaw(config.data().get(), ctx)) continue;
+            }
+
+            if (attemptMissionProgress(p, i, m, config, ctx, doThing)) return;
+        }
+    }
+
+    private <C extends MissionContext> boolean attemptMissionProgress(
+            Player p,
+            ItemStack i,
+            Mission m,
+            MissionConfig config,
+            C ctx,
+            Consumer<Mission> doThing) {
+        try {
+            for (MissionOption option : config.options()) {
+                if (!option.check(p, m, i, ctx)) return false;
+            }
+
+            int oldProgress = m.getProgress();
+            boolean oldCompleted = m.isCompleted();
+
+            doThing.accept(m);
+
+            MissionProgressEvent event = new MissionProgressEvent(p, m, i, oldProgress, m.getProgress());
+            if (!event.callEvent()) {
+                m.setProgress(oldProgress);
+                return false;
+            }
+
+            m.setProgress(event.getNewProgress());
+            if (m.getProgress() >= m.getRequirement()) m.setCompleted(true);
+
+            if (m.getProgress() != oldProgress || m.isCompleted() != oldCompleted) {
+                updateMissionData(i, m);
+            }
+
+            return true;
+
+        } catch (Exception ex) {
+            plugin.getLogger().log(Level.SEVERE, "Error processing mission '" + config.key() + "' for " + p.getName(), ex);
+            return false;
         }
     }
 
@@ -277,6 +325,7 @@ public class MissionManager {
         boolean oldCompleted = m.isCompleted();
         doThing.accept(m);
         if (oldCompleted == m.isCompleted() && m.getProgress() >= m.getRequirement()) m.setCompleted(true);
+
         if (oldCompleted == m.isCompleted() && m.getProgress() < m.getRequirement() && m.isCompleted())
             m.setCompleted(false);
 
@@ -312,7 +361,12 @@ public class MissionManager {
         if (getMissionOrNull(i) == null) return;
         i.editPersistentDataContainer(pdc -> pdc.set(invalidKey, PersistentDataType.BYTE, (byte) 1));
         plugin.getLogger().severe("Config entry \"" + id + "\" is missing/invalid, please check your config if this is not intentional!");
-        List<Component> lore = Stream.of("<red>MISSION HAS INVALID CONFIG ID: </red>" + id).map(MINI_MESSAGE::deserialize).toList();
+        ItemLore data = i.getData(DataComponentTypes.LORE);
+        List<Component> lore;
+        if (data == null) lore = new ArrayList<>();
+        else lore = new ArrayList<>(data.lines());
+        lore.addAll(0, Stream.of("<red>MISSION HAS INVALID CONFIG ID: </red>" + id).map(MINI_MESSAGE::deserialize).toList());
+
         i.setData(DataComponentTypes.LORE, ItemLore.lore().addLines(lore).build());
         i.setData(DataComponentTypes.CUSTOM_NAME, MINI_MESSAGE.deserialize("BROKEN MISSION"));
     }

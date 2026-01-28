@@ -18,6 +18,7 @@
 
 package io.github.stev6.easymissions.command;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.github.stev6.easymissions.EasyMissions;
 import io.github.stev6.easymissions.command.subcommand.*;
@@ -44,6 +45,11 @@ public class MissionCommands {
         new DataCommand("data", plugin).addToTree(root);
         new SetCommand("set", plugin).addToTree(root);
         new ListTypesCommand("list-types", plugin).addToTree(root);
+
+        root.executes(ctx -> {
+            plugin.runCommand("help em", ctx.getSource().getSender());
+            return Command.SINGLE_SUCCESS;
+        });
 
         return root.build();
     }

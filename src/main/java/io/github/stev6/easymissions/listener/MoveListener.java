@@ -42,11 +42,11 @@ public record MoveListener(RecentStepCache stepCache, PlayerMissionCache mission
         if (from.getBlockX() == to.getBlockX() && from.getBlockZ() == to.getBlockZ()) return;
 
         Player p = e.getPlayer();
+        var mainConfig = plugin.getConfigManager().getMainConfig();
 
-        if (!missionCache.playerHasAnyMission(p)) return;
+        if (mainConfig.mission().cacheSlots() && !missionCache.playerHasAnyMission(p)) return;
 
         if (!condition.test(p)) return;
-        var mainConfig = plugin.getConfigManager().getMainConfig();
         BlockPos pos = new BlockPos(
                 to.getWorld().getUID(),
                 to.getBlockX(),

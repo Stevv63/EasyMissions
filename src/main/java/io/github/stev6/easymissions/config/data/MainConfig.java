@@ -36,6 +36,7 @@ public record MainConfig(Messages messages, Map<String, Integer> categories, Mis
     }
 
     public record Mission(
+            boolean cacheSlots,
             NamespacedKey claimSound,
             float claimPitch,
             float claimVolume,

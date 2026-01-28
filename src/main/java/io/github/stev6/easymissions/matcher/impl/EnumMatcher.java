@@ -13,9 +13,12 @@ import java.util.Set;
 
 public record EnumMatcher<E extends Enum<E>>(@NotNull Set<E> values, boolean any) implements ValueMatcher<E> {
 
+    private static final EnumMatcher<?> ANY = new EnumMatcher<>(Collections.emptySet(), true);
+
     public static <T extends Enum<T>> EnumMatcher<T> parse(Class<T> enumClass, Set<String> targets) {
         if (targets.isEmpty() || targets.contains("*"))
-            return new EnumMatcher<>(Collections.<T>emptySet(), true); // no intellij, they cannot be inferred
+            //noinspection unchecked
+            return (EnumMatcher<T>) ANY;
 
         EnumSet<T> set = EnumSet.noneOf(enumClass);
         T[] allConstants = enumClass.getEnumConstants();

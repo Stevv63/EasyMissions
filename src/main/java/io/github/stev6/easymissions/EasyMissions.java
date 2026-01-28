@@ -167,7 +167,7 @@ public class EasyMissions extends JavaPlugin implements Listener {
         pluginManager.registerEvents(new MissionInventoryResult(missionManager), this);
         pluginManager.registerEvents(new ClaimListener(configManager), this);
         pluginManager.registerEvents(new MissionInteract(missionManager), this);
-        pluginManager.registerEvents(new MissionCacheListener(missionCache, missionManager), this);
+        pluginManager.registerEvents(new MissionCacheListener(missionCache, missionManager, configManager), this);
     }
 
     public boolean isDebug() {

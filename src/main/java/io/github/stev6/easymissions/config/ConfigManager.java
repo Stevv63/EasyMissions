@@ -138,6 +138,7 @@ public class ConfigManager {
             if (claimSoundStr != null) claimSound = NamespacedKey.fromString(claimSoundStr);
 
             return new MainConfig.Mission(
+                    section.getBoolean("cache_slots", true),
                     claimSound,
                     (float) section.getDouble("claim_sound_pitch", 1),
                     (float) section.getDouble("claim_sound_volume", 1),
