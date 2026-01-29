@@ -14,11 +14,8 @@ import java.util.Set;
 
 public record RegistryMatcher<T extends Keyed>(Set<T> values, boolean any) implements ValueMatcher<T> {
 
-    private static final RegistryMatcher<?> ANY = new RegistryMatcher<>(Collections.emptySet(), true);
-
     public static <T extends Keyed> RegistryMatcher<T> parse(Registry<T> registry, Set<String> targets) {
-        if (targets.contains("*") || targets.isEmpty()) //noinspection unchecked
-            return (RegistryMatcher<T>) ANY;
+        if (targets.contains("*") || targets.isEmpty()) return new RegistryMatcher<>(Collections.emptySet(), true);
 
         HashSet<T> set = new HashSet<>();
 
