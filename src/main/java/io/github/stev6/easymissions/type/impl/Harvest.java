@@ -24,7 +24,7 @@ public class Harvest implements TargetedMissionType<BlockContext, Harvest.Harves
 
     @Override
     public @NotNull HarvestData parse(@NotNull ConfigurationSection section) {
-        var blockStrings = new HashSet<>(section.getStringList("blocks"));
+        var blockStrings = new HashSet<>(section.getStringList("materials"));
         return new HarvestData(EnumMatcher.parse(Material.class, blockStrings));
     }
 

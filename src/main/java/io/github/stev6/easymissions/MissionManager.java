@@ -161,7 +161,7 @@ public class MissionManager {
             ItemStack i = p.getInventory().getItem(slot);
             Mission m = getMissionOrNull(i);
 
-            if (m == null || !m.getConfigID().equals(config.name())) {
+            if (m == null || !m.getConfigID().equals(config.key())) {
                 plugin.getLogger().log(Level.SEVERE, "Cache has corrupted data for " + p.getName() + " please report this to the developers");
                 plugin.getMissionCache().handlePlayer(p);
                 break;
