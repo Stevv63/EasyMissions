@@ -274,6 +274,8 @@ public class ConfigManager {
         Material material = Material.matchMaterial(getConfigString(missionSection, "item_material"));
         if (material == null) throw new ConfigException("No material set in default mission");
 
+        List<String> rewards = Collections.unmodifiableList(missionSection.getStringList("rewards"));
+
         List<String> worlds = Collections.unmodifiableList(missionSection.getStringList("blacklisted_worlds"));
 
         var defaultMission = new DefaultMission(
@@ -285,6 +287,7 @@ public class ConfigManager {
                 category,
                 rarity,
                 material,
+                rewards,
                 worlds
         );
 
@@ -374,7 +377,15 @@ public class ConfigManager {
 
         String matString = missionSection.getString("item_material");
         Material material = matString != null ? Material.matchMaterial(matString) : defaultMission.itemMaterial();
-        List<String> rewards = missionSection.getStringList("rewards");
+        List<String> rewards = new ArrayList<>(missionSection.contains("rewards", true) ? missionSection.getStringList("rewards") : defaultMission.rewards());
+
+        int rewardsIdx = rewards.indexOf("[REWARDS!]");
+
+        if (rewardsIdx != -1) {
+            var defaultRewards = List.copyOf(defaultMission.rewards());
+            rewards.remove(rewardsIdx);
+            rewards.addAll(rewardsIdx, defaultRewards);
+        }
 
         if (!mainConfig.categories().containsKey(category))
             throw new ConfigException("Category '" + category + "' is not defined in config.yml categories list.");

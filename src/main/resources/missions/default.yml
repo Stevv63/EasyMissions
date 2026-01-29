@@ -2,23 +2,97 @@
 # This is for missions with missing config entries and missing fields in mission configs.
 # You may edit anything you wish here, any missing fields in a mission config will get its field from here.
 # This file will be recreated each time it is deleted
+# Tip: you can add "[REWARDS!]" to your rewards in a mission config to add the rewards from the default mission to the one in your mission config.
+# The tip above allows for things like having a unified success message across multiple missions or a unified reward while having to write the command only once
 
 default:
-  name: "<gray>Default Mission</gray>"
-  completed_name: "<green>[NAME]</green>"
+  name: "<gradient:#FFAA00:#FFE500><shadow:#000000:1><b><type_cap> Mission</b></shadow></gradient>"
+  completed_name: "<green><bold>✔ COMPLETED</bold></green>"
 
   lore:
-    - "<gray>Complete the requirements to get a reward.</gray>"
+    - "<!i><shadow:#000000:1><white>Complete the mission to earn a</shadow>"
+    - "<gradient:#ffaa00:#ffe100><shadow:#000000:1>reward</gradient><white>."
     - ""
-    - "<white>Progress: <green><progress></green>/<red><requirement></red></white>"
+    - "<color:#FFFC00><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FFAA00><progress></color>"
 
   completed_lore:
-    - "[LORE!]" # makes completed lore normal lore but strikethrough
+    - "<st><color:#FFFC00><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FFAA00><progress></color></st>"
+    - "<!i><#55aaff><shadow:#000000:1>Press <key:key.use> <color:#AAAAAA>to advance</color>"
 
-  requirement_range: 60-255
+  requirement_range: -50
+  category: "easy"
+  item_rarity: "EPIC"
+  item_material: "PAPER"
+  blacklisted_worlds: [ ]
+  rewards:
+    - "say <gold><b>Congratulations!"
+
+# You may define your own defaults, the plugin will come with some premade ones for each category as a demonstration.
+
+default_easy:
+  name: "<b><gradient:#0DFF00:#236A26><shadow:#000000:1>Easy Mission</shadow></gradient></b>"
+  completed_name: "<green><bold>✔ COMPLETED</bold></green>"
+
+  lore:
+    - "<!i><shadow:#000000:1><white>Complete the mission to earn a</shadow>"
+    - "<gradient:#0DFF00:#236A26><shadow:#000000:1>reward</gradient><white>."
+    - ""
+    - "<color:#0DFF00><shadow:#000000:1>✮ </color><white><task><gray>: <color:#0DFF00><progress></color>"
+
+  completed_lore:
+    - "<st><color:#0DFF00><shadow:#000000:1>✮ </color><white><task><gray>: <color:#0DFF00><progress></color></st>"
+    - "<!i><#55aaff><shadow:#000000:1>Press <key:key.use> <color:#AAAAAA>to claim your rewards</color>"
+
+  requirement_range: -50
   category: "easy"
   item_rarity: "COMMON"
   item_material: "PAPER"
-  blacklisted_worlds: []
+  blacklisted_worlds: [ ]
+  rewards:
+    - "say <dark_green><b>Amazing!"
 
 
+default_medium:
+  name: "<b><gradient:#FFA500:#FFCC33><shadow:#000000:1>Medium Mission</shadow></gradient></b>"
+  completed_name: "<green><bold>✔ COMPLETED</bold></green>"
+
+  lore:
+    - "<!i><shadow:#000000:1><white>Complete the mission to earn a</shadow>"
+    - "<gradient:#FFA500:#FFCC33><shadow:#000000:1>reward</gradient><white>."
+    - ""
+    - "<color:#FFA500><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FFA500><progress></color>"
+
+  completed_lore:
+    - "<st><color:#FFA500><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FFA500><progress></color></st>"
+    - "<!i><#55aaff><shadow:#000000:1>Press <key:key.use> <color:#AAAAAA>to claim your rewards</color>"
+
+  requirement_range: -150
+  category: "medium"
+  item_rarity: "RARE"
+  item_material: "PAPER"
+  blacklisted_worlds: [ ]
+  rewards:
+    - "say <gold><b>Good job!"
+
+
+default_hard:
+  name: "<b><gradient:#FF0000:#611C1C><shadow:#000000:1>Hard Mission</shadow></gradient></b>"
+  completed_name: "<green><bold>✔ COMPLETED</bold></green>"
+
+  lore:
+    - "<!i><shadow:#000000:1><white>Complete the mission to earn a</shadow>"
+    - "<gradient:#FF0000:#611C1C><shadow:#000000:1>reward</gradient><white>."
+    - ""
+    - "<color:#FF0000><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FF0000><progress></color>"
+
+  completed_lore:
+    - "<st><color:#FF0000><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FF0000><progress></color></st>"
+    - "<!i><#55aaff><shadow:#000000:1>Press <key:key.use> <color:#AAAAAA>to claim your rewards</color>"
+
+  requirement_range: -300
+  category: "hard"
+  item_rarity: "EPIC"
+  item_material: "PAPER"
+  blacklisted_worlds: [ ]
+  rewards:
+    - "say <red><b>Great job."
