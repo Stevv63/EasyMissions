@@ -8,6 +8,8 @@
 # Here is a mission that will utilize all possible options right now. Don't be afraid of how big it looks right now, it gets way shorter using defaults
 
 break_stone: # Mission top-level key
+  default: default # the default mission to use for this config, it defaults to the base one, but we can use any valid one
+
   # Item display stuff
   name: "<gray>Stone Breaker</gray>" # Mission item display name
   completed_name: "<green>[NAME] (COMPLETED)</green>" # [NAME] will be replaced with the normal name
@@ -35,20 +37,131 @@ break_stone: # Mission top-level key
   blacklisted_worlds: [ "world_the_nether" ] # Worlds that this mission will not progress on.
   targets: # section to specify conditions for mission to progress, what you can have depends on the chosen type
     materials:
-      - "*_STONE" # wildcard for any block ending with stone, you can also use exact names like STONE or COBBLESTONE
+      - "*STONE" # wildcard for any block ending with stone, you can also use exact names like STONE or COBBLESTONE
+
+ # You may also omit the "targets:" section and directly set the conditions, it would be like this:
+ # materials:
+ #   - "*STONE"
+
 
   # Custom options are additional settings for your mission config, other plugins can add their own options for you
   # An existing option is the permission one, it makes the mission only work for that permission or if you have one of the permissions
   custom_options:
-    permission:
+    permission: # this is our custom option
       values:
-        - "easymissions.break"
+        - "easymissions.break" # only players with this permission will be able to progress
+
   # Commands to run on mission claim.
   # "say" will send a message to the player, not the minecraft command
   # "minecraft:say" runs the real minecraft command
+  # [REWARDS!] will execute the default rewards alongside your rewards if you put it
   rewards:
     - "say <green>Good job, you completed the mission yayay!"
     - "give <player> cobblestone 64"
 
 # Above is a full, functional mission with all options that should have a requirement between 4 and 59 and progresses when a player breaks any block ending with stone.
 # Additionally, you can configure the defaults of a mission to avoid repetition and allow for better readability. Check default.yml for that
+
+# To help you further, here are some more examples using the defaults:
+
+lumberjack:
+  default: default_easy
+  type: break
+  task: "Chop <requirement> logs"
+  materials: [ "*_LOG" ]
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> iron_ingot 4"
+
+craft_torch:
+  default: default_easy
+  type: craft
+  task: "Craft <requirement> torches"
+  item:
+    materials: [ "TORCH" ]
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> coal 20"
+
+farmer:
+  default: default_easy
+  task: "Harvest <requirement> of any crop"
+  type: harvest
+  materials: [ "SUGAR_CANE", "WHEAT", "POTATOES", "CARROTS" ]
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> bread 30"
+
+# medium missions
+
+walker:
+  default: default_medium
+  task: "Walk <requirement>"
+  type: walk
+  requirement_range: 200-500
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> iron_ingot 12"
+
+fisherman:
+  default: default_medium
+  task: "Catch <requirement> fish"
+  type: fish
+  requirement_range: 10-25
+  item:
+    materials: [ "COD", "SALMON", "*FISH" ]
+
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> lapis_lazuli 20"
+    - "xp give <player> 100"
+
+smelter:
+  default: default_medium
+  task: "Smelt <requirement> ores"
+  type: smelt
+  requirement_range: 32-64
+  materials: [ "*INGOT" ]
+
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> diamond 2"
+    - "xp give <player> 200"
+
+# hard missions
+
+monster_killer:
+  default: default_hard
+  task: "Kill <requirement> Monsters"
+  type: kill
+  requirement_range: 35-55
+  entity:
+    monster: true
+
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> diamond 2"
+    - "xp give <player> 200"
+
+enchanter:
+  default: default_hard
+  task: "Enchant <requirement> items with Sharpness III+ from an enchanting table"
+  type: enchant
+  requirement_range: 3-4
+
+  enchants:
+    sharpness: 3+
+  ignore_anvil: true
+
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> diamond 8"
+
+glider:
+  default: default_hard
+  task: "Fly <requirement> blocks"
+  type: glide
+  requirement_range: 1000-1500
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> firework_rocket 64"
