@@ -57,7 +57,8 @@ public record BlocksListener(MissionManager m, RecentPlaceCache c) implements Li
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent e) {
-        if (c != null) c.add(e.getBlock());
+        Block b = e.getBlock();
+        if (c != null && !(b.getBlockData() instanceof Ageable)) c.add(b);
         m.findAndModifyFirstMission(e.getPlayer(), Place.INSTANCE, BlockContext.from(e), mission -> mission.incrementProgress(1));
     }
 

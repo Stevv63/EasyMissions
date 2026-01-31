@@ -40,7 +40,7 @@ public final class ListTypesCommand extends EasyMissionsCommand {
     @Override
     public int execute(CommandContext<CommandSourceStack> ctx) {
         var sender = ctx.getSource().getSender();
-        String types = String.join(plugin.getConfigManager().getMainConfig().mission().splitter(), plugin.getTypeRegistry().types().keySet());
+        String types = String.join(", ", plugin.getTypeRegistry().types().keySet());
         sender.sendRichMessage("<blue>Available types: <red><types></red>", Placeholder.unparsed("types", types));
         return Command.SINGLE_SUCCESS;
     }

@@ -2,8 +2,6 @@
 # Uses MiniMessage for coloring and placeholders.
 # Different messages have different placeholders available, see the wiki for full lists.
 
-debug: false
-
 messages:
   reload: "<green>Reloaded successfully</green>"
   reload_fail: "<red>An error occurred while reloading, check the console for more info, broken configs will be roll backed</red>"
@@ -17,7 +15,7 @@ messages:
 categories:
   easy: 50
   medium: 30
-  hard: 20
+  hard: 10
 
 mission:
   # Whether to cache the slots that players have missions in or not, this is faster in most cases
@@ -28,8 +26,6 @@ mission:
   claim_sound_pitch: 0.80
   # The volume to use when playing the claim sound
   claim_sound_volume: 0.5
-  # How targets are split when using the '[target]' placeholder, list types command and the type list on start, this will show like target1, target2 etc., include the space
-  target_splitter: ", "
   # Number of blocks that have to be walked updating mission progress. Higher = better performance, lower = more accurate tracking
   update_walk: 5
   # How often (seconds) to clear the brew cache that tracks player brewing, don't make this shorter than the time it takes to brew a potion on your server
@@ -64,3 +60,4 @@ menus:
     <hover:show_text:'<task>'><#b91c1c><u>Hover to view task →</u></#b91c1c></hover>
     <dark_gray>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+debug: false # debug mode, won't benefit unless you're a developer or want to debug config errors and get the stacktrace

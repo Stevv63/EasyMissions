@@ -33,7 +33,7 @@ break_stone: # Mission top-level key
   # Mission settings
   category: "easy" # Must match a category in config.yml
   type: "break" # Mission type, see wiki for list
-  requirement_range: 4-59
+  requirement_range: 4-59 # the range (inclusive), has many tricks for you to use, check out below and the wiki to see them
   blacklisted_worlds: [ "world_the_nether" ] # Worlds that this mission will not progress on.
   targets: # section to specify conditions for mission to progress, what you can have depends on the chosen type
     materials:
@@ -68,15 +68,16 @@ lumberjack:
   default: default_easy
   type: break
   task: "Chop <requirement> logs"
-  materials: [ "*_LOG" ]
+  materials: [ "*_LOG" ] # you may use targets: here but it will add more indentation, this is clearer
   rewards:
-    - "[REWARDS!]"
+    - "[REWARDS!]" # inherit rewards from "default_easy" to get its success message
     - "give <player> iron_ingot 4"
 
 craft_torch:
   default: default_easy
   type: craft
   task: "Craft <requirement> torches"
+  requirement_range: 32-64
   item:
     materials: [ "TORCH" ]
   rewards:
@@ -136,7 +137,7 @@ monster_killer:
   type: kill
   requirement_range: 35-55
   entity:
-    monster: true
+    monster: true # ensures only monsters count
 
   rewards:
     - "[REWARDS!]"
@@ -150,8 +151,8 @@ enchanter:
   requirement_range: 3-4
 
   enchants:
-    sharpness: 3+
-  ignore_anvil: true
+    sharpness: 3+ # range for any number that is 3 or greater
+  ignore_anvil: true # ensures it only progresses for enchanting tables
 
   rewards:
     - "[REWARDS!]"
@@ -165,3 +166,14 @@ glider:
   rewards:
     - "[REWARDS!]"
     - "give <player> firework_rocket 64"
+
+pvper:
+  default: default_hard
+  task: "Deal <requirement> damage to players"
+  type: damage
+  requirement_range: 500-1000
+  entity:
+    types: ["PLAYER"]
+  rewards:
+    - "[REWARDS!]"
+    - "give <player> enchanted_book[stored_enchantments={sharpness:5}]"

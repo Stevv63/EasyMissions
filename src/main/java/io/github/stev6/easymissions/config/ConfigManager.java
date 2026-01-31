@@ -142,7 +142,6 @@ public class ConfigManager {
                     claimSound,
                     (float) section.getDouble("claim_sound_pitch", 1),
                     (float) section.getDouble("claim_sound_volume", 1),
-                    section.getString("target_splitter", ", "),
                     section.getInt("update_walk", 5),
                     section.getLong("brew_cache_timeout", 300)
             );

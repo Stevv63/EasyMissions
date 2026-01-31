@@ -66,7 +66,7 @@ default_medium:
     - "<st><color:#FFA500><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FFA500><progress></color></st>"
     - "<!i><#55aaff><shadow:#000000:1>Press <key:key.use> <color:#AAAAAA>to claim your rewards</color>"
 
-  requirement_range: -150
+  requirement_range: 50-150
   category: "medium"
   item_rarity: "RARE"
   item_material: "PAPER"
@@ -89,7 +89,7 @@ default_hard:
     - "<st><color:#FF0000><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FF0000><progress></color></st>"
     - "<!i><#55aaff><shadow:#000000:1>Press <key:key.use> <color:#AAAAAA>to claim your rewards</color>"
 
-  requirement_range: -300
+  requirement_range: 150-300
   category: "hard"
   item_rarity: "EPIC"
   item_material: "PAPER"

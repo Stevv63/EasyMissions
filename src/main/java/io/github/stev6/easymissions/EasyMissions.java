@@ -101,7 +101,7 @@ public class EasyMissions extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onLoad(ServerLoadEvent e) {
-        String types = typeRegistry.types().keySet().stream().sorted().collect(Collectors.joining(configManager.getMainConfig().mission().splitter()));
+        String types = typeRegistry.types().keySet().stream().sorted().collect(Collectors.joining(", "));
         getLogger().info("Available types: [%s]".formatted(types));
         configManager.loadMissions();
     }

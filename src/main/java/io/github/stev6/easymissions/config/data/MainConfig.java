@@ -40,7 +40,6 @@ public record MainConfig(Messages messages, Map<String, Integer> categories, Mis
             NamespacedKey claimSound,
             float claimPitch,
             float claimVolume,
-            String splitter,
             int updateWalk,
             long brewCacheTimeOut
     ) {
