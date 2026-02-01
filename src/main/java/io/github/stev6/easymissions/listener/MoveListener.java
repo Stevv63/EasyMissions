@@ -65,16 +65,16 @@ public record MoveListener(RecentStepCache stepCache, PlayerMissionCache mission
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onWalk(PlayerMoveEvent e) {
-        handleMove(e, SimpleTypes.WALK, p -> !p.isGliding() && !p.isSwimming() && !p.isFlying() && !p.isRiptiding());
+        handleMove(e, SimpleTypes.WALK, p -> !p.isGliding() && !p.isSwimming() && !p.isFlying() && !p.isRiptiding() && !p.isInsideVehicle());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onSwim(PlayerMoveEvent e) {
-        handleMove(e, SimpleTypes.SWIM, p -> p.isSwimming() && !p.isFlying());
+        handleMove(e, SimpleTypes.SWIM, p -> p.isSwimming() && !p.isFlying() && !p.isInsideVehicle() && !p.isRiptiding());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onGlide(PlayerMoveEvent e) {
-        handleMove(e, SimpleTypes.GLIDE, Player::isGliding);
+        handleMove(e, SimpleTypes.GLIDE, p -> p.isGliding() && !p.isInsideVehicle() && !p.isRiptiding());
     }
 }
