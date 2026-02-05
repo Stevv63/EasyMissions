@@ -120,6 +120,11 @@ public class MissionManager {
         return i.getPersistentDataContainer().has(dataKey);
     }
 
+    public boolean isBrokenMission(ItemStack i) {
+        if (!isMission(i)) return false;
+        return i.getPersistentDataContainer().has(invalidKey);
+    }
+
     public NavigableMap<Integer, Mission> getMissionsInInventory(@NotNull Inventory inv, @Nullable Set<Integer> toSkip) {
         NavigableMap<Integer, Mission> toReturn = new TreeMap<>();
         for (int idx = 0; idx < inv.getSize(); idx++) {
@@ -164,7 +169,8 @@ public class MissionManager {
             if (m == null || !m.getConfigID().equals(config.key())) {
                 plugin.getLogger().log(Level.SEVERE, "Cache has corrupted data for " + p.getName() + " please report this to the developers");
                 plugin.getMissionCache().handlePlayer(p);
-                break;
+                findFromInventory(p, type, ctx, doThing);
+                return;
             }
 
             if (attemptMissionProgress(p, i, m, config, ctx, doThing)) return;
@@ -186,7 +192,7 @@ public class MissionManager {
             if (config == null) {
                 handleBrokenMission(i, m.getConfigID());
                 continue;
-            }
+            } else if (isBrokenMission(i)) updateMissionData(i, m);
 
             if (config.type() != type) continue;
 
@@ -357,7 +363,7 @@ public class MissionManager {
 
     @SuppressWarnings("UnstableApiUsage")
     public void handleBrokenMission(ItemStack i, String id) {
-        if (i.getPersistentDataContainer().has(invalidKey, PersistentDataType.BYTE)) return;
+        if (isBrokenMission(i)) return;
         if (getMissionOrNull(i) == null) return;
         i.editPersistentDataContainer(pdc -> pdc.set(invalidKey, PersistentDataType.BYTE, (byte) 1));
         plugin.getLogger().severe("Config entry \"" + id + "\" is missing/invalid, please check your config if this is not intentional!");
