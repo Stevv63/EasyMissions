@@ -35,6 +35,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -265,7 +266,7 @@ public class EasyMissionsAPI {
      * @return {@code Optional<Mission>} containing/not containing the mission object
      */
     @NotNull
-    public Optional<Mission> getMission(@NotNull ItemStack item) {
+    public Optional<Mission> getMission(@Nullable ItemStack item) {
         return Optional.ofNullable(manager.getMissionOrNull(item));
     }
 
@@ -372,15 +373,25 @@ public class EasyMissionsAPI {
     }
 
     /**
-     * Checks whether an {@link ItemStack} is an item or not
+     * Checks whether an {@link ItemStack} is a mission or not
      *
      * @param item the item to check
      * @return {@code true} if it's a {@link Mission}
      * {@code false} if it's not
      * @throws IllegalStateException if called before the server loaded
      */
-    public boolean isMission(@NotNull ItemStack item) {
+    public boolean isMission(@Nullable ItemStack item) {
         return manager.isMission(item);
+    }
+
+    /**
+     * Checks whether an {@link ItemStack} is a broken mission or not
+     * @param item the mission item to check
+     * @return {@code true} if it's a broken mission
+     * {@code false} if it's not
+     */
+    public boolean isBrokenMission(@Nullable ItemStack item) {
+        return manager.isBrokenMission(item);
     }
 
     /**

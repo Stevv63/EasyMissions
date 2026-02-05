@@ -115,7 +115,7 @@ public class MissionManager {
         return i.getPersistentDataContainer().get(dataKey, MissionPersistentDataType.INSTANCE);
     }
 
-    public boolean isMission(ItemStack i) {
+    public boolean isMission(@Nullable ItemStack i) {
         if (i == null || i.isEmpty()) return false;
         return i.getPersistentDataContainer().has(dataKey);
     }
