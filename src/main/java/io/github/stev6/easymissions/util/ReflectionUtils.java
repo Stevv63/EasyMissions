@@ -1,7 +1,6 @@
 package io.github.stev6.easymissions.util;
 
 import com.google.common.reflect.ClassPath;
-import io.github.stev6.easymissions.EasyMissions;
 import io.github.stev6.easymissions.registry.MissionTypeRegistry;
 import io.github.stev6.easymissions.type.MissionType;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,21 +18,23 @@ public class ReflectionUtils {
     public static void registerAll(Class<?> simpleTypesClass, MissionTypeRegistry registry, String pkgPath, JavaPlugin plugin) {
         Logger logger = plugin.getLogger();
 
-        try {
-            getMissionTypes(simpleTypesClass).forEach(registry::registerType);
-        } catch (Exception e) {
-            logger.severe("Failed to register simple types: " + e.getMessage());
+        if (simpleTypesClass != null) {
+            try {
+                getMissionTypes(simpleTypesClass).forEach(registry::registerType);
+            } catch (Exception e) {
+                logger.severe("Failed to register simple types: " + e.getMessage());
+            }
         }
 
         try {
-            ClassPath path = ClassPath.from(EasyMissions.class.getClassLoader());
+            ClassPath path = ClassPath.from(plugin.getClass().getClassLoader());
             for (ClassPath.ClassInfo c : path.getTopLevelClasses(pkgPath)) {
                 var clazz = c.load();
                 if (Modifier.isAbstract(clazz.getModifiers()) || clazz.isInterface()) continue;
                 if (MissionType.class.isAssignableFrom(clazz)) {
                     try {
                         List<MissionType> types = getMissionTypes(clazz);
-                        if (!types.isEmpty()) registry.registerType(types.getFirst());
+                        if (!types.isEmpty()) types.forEach(registry::registerType);
                     } catch (Exception e) {
                         logger.log(Level.SEVERE, "Failed to use reflection to load mission type: " + clazz.getName(), e);
                     }
