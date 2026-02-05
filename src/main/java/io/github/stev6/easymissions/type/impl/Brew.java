@@ -32,7 +32,7 @@ public class Brew implements TargetedMissionType<ItemContext, Brew.BrewData> {
         ItemDataMatcher itemMatcher = itemSection == null ? null : ItemDataMatcher.parse(itemSection);
 
         HashSet<String> effectStrings = new HashSet<>(section.getStringList("effects"));
-        RegistryMatcher<PotionEffectType> effectMatcher = RegistryMatcher.parse(Registry.POTION_EFFECT_TYPE, effectStrings);
+        RegistryMatcher<PotionEffectType> effectMatcher = RegistryMatcher.parse(Registry.MOB_EFFECT, effectStrings);
         return new BrewData(itemMatcher, effectMatcher);
     }
 
