@@ -9,6 +9,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -22,7 +23,7 @@ public class ItemDataMatcher implements ValueMatcher<ItemStack> {
         this.predicate = predicate;
     }
 
-    public static ItemDataMatcher parse(ConfigurationSection section) {
+    public static ItemDataMatcher parse(@NotNull ConfigurationSection section) {
 
         Predicate<ItemStack> predicate = Objects::nonNull;
 
