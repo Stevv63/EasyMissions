@@ -42,7 +42,7 @@ public record EntityListener(MissionManager m) implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onKill(EntityDeathEvent e) {
         if (e.getDamageSource().getCausingEntity() instanceof Player p) {
-            var ctx = new EntityKillContext(e.getEntity(), p.getInventory().getItemInMainHand());
+            var ctx = new EntityKillContext(e.getEntity(), p.getInventory().getItemInMainHand(), e.getDrops());
             m.findAndModifyFirstMission(p, Kill.INSTANCE, ctx, mission -> mission.incrementProgress(1));
         }
     }

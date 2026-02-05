@@ -7,7 +7,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public record EntityKillContext(@NotNull Entity entity, ItemStack weapon) implements MissionContext, Locatable {
+import java.util.List;
+
+public record EntityKillContext(@NotNull Entity entity, ItemStack weapon, List<ItemStack> drops) implements MissionContext, Locatable {
     @NotNull
     @Override
     public Location getLocation() {
