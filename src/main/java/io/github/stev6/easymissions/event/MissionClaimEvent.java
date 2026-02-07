@@ -18,19 +18,19 @@
 
 package io.github.stev6.easymissions.event;
 
+import io.github.stev6.easymissions.mission.Mission;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import io.github.stev6.easymissions.mission.Mission;
 
 import java.util.List;
 
 public class MissionClaimEvent extends EasyMissionsEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
-    private final @NotNull List<String> commands;
+    private @NotNull List<String> commands;
     private boolean isCancelled;
 
     public MissionClaimEvent(
@@ -48,6 +48,10 @@ public class MissionClaimEvent extends EasyMissionsEvent implements Cancellable 
 
     public @NotNull List<String> getCommands() {
         return commands;
+    }
+
+    public void setCommands(@NotNull List<String> commands) {
+        this.commands = commands;
     }
 
     @Override

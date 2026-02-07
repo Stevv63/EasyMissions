@@ -181,6 +181,26 @@ public class EasyMissionsAPI {
     }
 
     /**
+     * Updates the data on a mission item with the given {@link Mission}
+     *
+     * @param missionItem   The ItemStack that is a mission
+     * @param mission       The updated {@link Mission} object to put on the Item
+     * @param updateDisplay Whether to also update the mission's display (placeholders, lore) or not
+     * @throws IllegalStateException    if called before the server loaded
+     * @throws IllegalArgumentException if {@code updateDisplay} is true and the given {@link Mission} has no registered {@link MissionConfig}
+     */
+    public void updateMissionData(@NotNull ItemStack missionItem, @NotNull Mission mission, boolean updateDisplay) {
+        checkMissionsLoaded();
+        Preconditions.checkArgument(isMission(missionItem), "ItemStack passed isn't a mission item");
+        if (updateDisplay)
+            Preconditions.checkArgument(manager.getMissionConfigOrNull(mission) != null,
+                    "Cannot update display for a broken mission");
+
+        manager.updateMissionData(missionItem, mission, updateDisplay);
+    }
+
+
+    /**
      * Gets all available {@link MissionType}s in the {@link MissionTypeRegistry}
      * <p>
      * Third party {@link MissionType}s may not be available yet, schedule your call to run on the next tick
@@ -386,6 +406,7 @@ public class EasyMissionsAPI {
 
     /**
      * Checks whether an {@link ItemStack} is a broken mission or not
+     *
      * @param item the mission item to check
      * @return {@code true} if it's a broken mission
      * {@code false} if it's not

@@ -17,6 +17,7 @@
  */
 package io.github.stev6.easymissions;
 
+import com.google.common.base.Verify;
 import io.github.stev6.easymissions.config.ConfigManager;
 import io.github.stev6.easymissions.config.data.MissionConfig;
 import io.github.stev6.easymissions.context.MissionContext;
@@ -192,7 +193,7 @@ public class MissionManager {
             if (config == null) {
                 handleBrokenMission(i, m.getConfigID());
                 continue;
-            } else if (isBrokenMission(i)) updateMissionData(i, m);
+            } else if (isBrokenMission(i)) updateMissionData(i, m, true);
 
             if (config.type() != type) continue;
 
@@ -233,7 +234,7 @@ public class MissionManager {
             if (m.getProgress() >= m.getRequirement()) m.setCompleted(true);
 
             if (m.getProgress() != oldProgress || m.isCompleted() != oldCompleted) {
-                updateMissionData(i, m);
+                updateMissionData(i, m, true);
             }
 
             return true;
@@ -271,19 +272,25 @@ public class MissionManager {
         return missions.get(ThreadLocalRandom.current().nextInt(missions.size()));
     }
 
-    public void updateMissionData(@NotNull ItemStack i, @NotNull Mission m) {
+    public void updateMissionData(@NotNull ItemStack i, @NotNull Mission m, boolean updateDisplay) {
         MissionConfig config = getMissionConfigOrNull(m);
-        if (config == null) return;
+
         i.editPersistentDataContainer(pdc -> {
-            pdc.remove(invalidKey);
+            if (config != null) pdc.remove(invalidKey);
             pdc.set(dataKey, MissionPersistentDataType.INSTANCE, m);
         });
 
-        updateMissionDisplay(i, m, config);
+        if (updateDisplay) {
+            Verify.verifyNotNull(
+                    config,
+                    "updateDisplay requested for broken mission"
+            );
+            updateMissionDisplay(i, m, config);
+        }
     }
 
     @SuppressWarnings("UnstableApiUsage")
-    public void updateMissionDisplay(@NotNull ItemStack i, @NotNull Mission m, MissionConfig c) {
+    public void updateMissionDisplay(@NotNull ItemStack i, @NotNull Mission m, @NotNull MissionConfig c) {
         TagResolver tags = getMissionTags(m);
         MiniMessage mm = MINI_MESSAGE;
 
@@ -335,7 +342,7 @@ public class MissionManager {
         if (oldCompleted == m.isCompleted() && m.getProgress() < m.getRequirement() && m.isCompleted())
             m.setCompleted(false);
 
-        updateMissionData(i, m);
+        updateMissionData(i, m, true);
         return true;
     }
 

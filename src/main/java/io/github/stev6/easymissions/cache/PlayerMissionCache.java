@@ -69,7 +69,7 @@ public class PlayerMissionCache {
             if (mConfig == null) {
                 manager.handleBrokenMission(i, m.getConfigID());
                 continue;
-            } else if (manager.isBrokenMission(i)) manager.updateMissionData(i, m);
+            } else if (manager.isBrokenMission(i)) manager.updateMissionData(i, m, true);
 
             cached.put(slot, mConfig);
         }
