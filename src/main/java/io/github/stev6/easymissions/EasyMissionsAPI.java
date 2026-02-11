@@ -201,7 +201,7 @@ public class EasyMissionsAPI {
 
 
     /**
-     * Gets all available {@link MissionType}s in the {@link MissionTypeRegistry}
+     * Gets all available {@link MissionType}s in the {@link MissionTypeRegistry}, do note that the map is immutable and cannot be modified
      * <p>
      * Third party {@link MissionType}s may not be available yet, schedule your call to run on the next tick
      * or {@link ServerLoadEvent} or in a context where the server has loaded to ensure all types are loaded
@@ -214,7 +214,7 @@ public class EasyMissionsAPI {
     }
 
     /**
-     * Gets all available {@link MissionOption}s
+     * Gets all available {@link MissionOption}s, do note that this map is immutable and cannot be modified
      * <p>
      * Third party {@link MissionOption}s may not be available yet, schedule your call to run on the next tick
      * or {@link ServerLoadEvent} or in a context where the server has loaded to ensure all options are loaded
@@ -227,7 +227,7 @@ public class EasyMissionsAPI {
     }
 
     /**
-     * Gets a {@link MissionType} using its ID
+     * Gets a {@link MissionType} using its ID, do note that the collections within it are immutable and cannot be modified
      * <p>
      * Third party {@link MissionType}s may not be available yet, schedule your call to run on the next tick
      * or {@link ServerLoadEvent} or in a context where the server has loaded to ensure all types are loaded
@@ -364,7 +364,7 @@ public class EasyMissionsAPI {
      */
     @NotNull
     public Map<String, Integer> getCategories() {
-        return Collections.unmodifiableMap(plugin.getConfigManager().getMainConfig().categories());
+        return plugin.getConfigManager().getMainConfig().categories();
     }
 
     /**

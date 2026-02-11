@@ -49,6 +49,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+// NOTE: all collections in records here must be immutable, see the building of a MissionConfig (bottom) for an example
+
 @ApiStatus.Internal
 public class ConfigManager {
     private final Map<String, MissionConfig> missions = new HashMap<>();
@@ -172,7 +174,7 @@ public class ConfigManager {
                 if (entry.getValue() < 0)
                     throw new ConfigException("Category '" + entry.getKey() + "' cannot have negative weight");
 
-            return cats; // meow
+            return Collections.unmodifiableMap(cats); // meow
         });
 
         MainConfig.Menus menus = withContext("Section: menus", () -> {

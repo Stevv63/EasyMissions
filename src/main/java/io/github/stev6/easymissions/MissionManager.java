@@ -324,7 +324,7 @@ public class MissionManager {
 
         p.getInventory().removeItemAnySlot(i);
 
-        for (String reward : config.rewards()) {
+        for (String reward : event.getCommands()) {
             String command = reward.replace("<player>", p.getName());
             if (command.startsWith("say ")) p.sendRichMessage(command.substring(4).trim());
             else plugin.runCommand(command, Bukkit.getConsoleSender());
