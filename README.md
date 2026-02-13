@@ -146,9 +146,13 @@ The defaults allow you to set things such as the mission material, itemrarity, l
 
 That is where the **default.yml** comes in, options that aren't in the mission config will use the value from the default.yml so you don't have to explicitly specify everything even if it's always the same across all missions.
 
+You can create your own defaults in a config.yml and use them in a mission config by specifying a `default` option and including the top level key of your default
+
 So for example, you don't even have to make a custom lore for each config! just specify `task` in your mission configs and use the placeholder `task` in your default.yml's lore and now each mission has a unified view while still explaining what you need to do!
 
-Now there are some options and things that just cannot be defaulted to, such as the type or the targets, the item model, its completed variant and the rewards.
+You can list rewards and even inherit them using the `[REWARDS!]` in your mission config's rewards
+
+Now there are some options and things that just cannot be defaulted to, such as the type or the targets, the item model, its completed variant.
 
 ### API
 ---
