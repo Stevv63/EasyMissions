@@ -21,12 +21,14 @@ package io.github.stev6.easymissions.command.subcommand;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.github.stev6.easymissions.EasyMissions;
+import io.github.stev6.easymissions.config.data.MissionConfig;
+import io.github.stev6.easymissions.event.MissionCreateEvent;
+import io.github.stev6.easymissions.event.MissionCreateEvent.Source;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import io.github.stev6.easymissions.EasyMissions;
-import io.github.stev6.easymissions.config.data.MissionConfig;
 
 public sealed abstract class EasyMissionsCommand permits CategoryRandomCommand, DataCommand, GiveCommand, ListTypesCommand, RandomCommand, ReloadCommand, SetCommand {
 
@@ -38,14 +40,24 @@ public sealed abstract class EasyMissionsCommand permits CategoryRandomCommand, 
         this.plugin = plugin;
     }
 
-    protected void giveItem(CommandSender sender, Player target, MissionConfig config) {
+    protected void giveItem(CommandSender sender, Player target, MissionConfig config, Source source) {
         var manager = plugin.getMissionManager();
         var mainConfig = plugin.getConfigManager().getMainConfig();
         if (config == null) {
             sender.sendRichMessage(mainConfig.messages().randMissionNotFound());
             return;
         }
-        target.give(manager.createMissionItem(config));
+
+        var missionItem = manager.createMissionItem(config);
+        var mission = manager.getMissionOrNull(missionItem);
+
+        if (mission == null) return; // not possible but who cares
+
+        MissionCreateEvent event = new MissionCreateEvent(target, missionItem, mission, config, source);
+
+        if (!event.callEvent()) return;
+
+        target.give(missionItem);
         sender.sendRichMessage(
                 mainConfig.messages().giveMission(),
                 Placeholder.unparsed("target", target.getName()),

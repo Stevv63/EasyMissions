@@ -12,8 +12,24 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * {@link ValueMatcher} implementation for Registry keys (e.g., Enchantments, PotionEffectTypes).
+ * <p>
+ * This parses {@link NamespacedKey} strings from the config (e.g., "minecraft:sharpness") and supports wildcards.
+ * @param <T> The keyed type (must be in a registry)
+ */
+
 public record RegistryMatcher<T extends Keyed>(Set<T> values, boolean any) implements ValueMatcher<T> {
 
+    /**
+     * Parses a set of strings from the config into a RegistryMatcher.
+     *
+     * @param registry The {@link Registry} to look up keys in
+     * @param targets The set of strings/keys from the config
+     * @param <T> The type
+     * @return A new matcher
+     * @throws ConfigException If the format is invalid (missing namespace) or the key doesn't exist
+     */
     public static <T extends Keyed> RegistryMatcher<T> parse(Registry<T> registry, Set<String> targets) {
         if (targets.contains("*") || targets.isEmpty()) return new RegistryMatcher<>(Collections.emptySet(), true);
 

@@ -25,6 +25,9 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Fired whenever a {@link Mission} progresses
+ */
 public class MissionProgressEvent extends EasyMissionsEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
     private final int oldProgress;
@@ -37,14 +40,23 @@ public class MissionProgressEvent extends EasyMissionsEvent implements Cancellab
         this.newProgress = newProgress;
     }
 
+    /**
+     * @return The old progress on the mission
+     */
     public int getOldProgress() {
         return oldProgress;
     }
 
+    /**
+     * @return The new progress that will be applied to the mission
+     */
     public int getNewProgress() {
         return newProgress;
     }
 
+    /**
+     * Sets the new progress to be applied to the mission
+     */
     public void setNewProgress(int newProgress) {
         this.newProgress = newProgress;
     }

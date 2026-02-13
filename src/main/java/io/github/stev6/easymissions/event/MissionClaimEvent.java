@@ -27,6 +27,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+/**
+ * Fired whenever a mission is claimed
+ */
 public class MissionClaimEvent extends EasyMissionsEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -46,10 +49,19 @@ public class MissionClaimEvent extends EasyMissionsEvent implements Cancellable 
         return HANDLER_LIST;
     }
 
+    /**
+     * Returns an immutable list of the commands, if you would like to modify the commands
+     * feel free to use {@link #setCommands(List)}
+     * @return An immutable list containing the commands that will be run
+     */
     public @NotNull List<String> getCommands() {
         return commands;
     }
 
+    /**
+     * Sets the commands to execute for this event, will overwrite the existing commands
+     * @param commands Your list
+     */
     public void setCommands(@NotNull List<String> commands) {
         this.commands = commands;
     }

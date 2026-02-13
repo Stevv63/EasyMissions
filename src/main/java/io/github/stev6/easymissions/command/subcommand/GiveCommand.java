@@ -25,6 +25,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.stev6.easymissions.EasyMissions;
 import io.github.stev6.easymissions.command.argument.MissionEntryArgument;
 import io.github.stev6.easymissions.config.data.MissionConfig;
+import io.github.stev6.easymissions.event.MissionCreateEvent.Source;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -50,7 +51,7 @@ public final class GiveCommand extends EasyMissionsCommand {
     public int execute(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         var targets = ctx.getArgument("target", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource());
         MissionConfig config = ctx.getArgument("missionConfig", MissionConfig.class);
-        for (Player target : targets) giveItem(ctx.getSource().getSender(), target, config);
+        for (Player target : targets) giveItem(ctx.getSource().getSender(), target, config, Source.GIVE);
         return Command.SINGLE_SUCCESS;
     }
 }

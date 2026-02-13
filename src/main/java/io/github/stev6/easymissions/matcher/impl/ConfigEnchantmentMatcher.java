@@ -15,9 +15,38 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * {@link ValueMatcher} for a map of Enchantments and levels against configuration requirements.
+ * <p>
+ * This matcher supports:
+ * <ul>
+ *     <li>Specific levels for specific enchantments (e.g., sharpness: 5)</li>
+ *     <li>Level ranges (e.g., unbreaking: "1-3")</li>
+ *     <li>"Match Any" logic (require all listed enchants vs require at least one)</li>
+ *     <li>Wildcard matches via {@link RegistryMatcher}</li>
+ * </ul>
+ *
+ * <h3>Config Example</h3>
+ * <pre>
+ * enchants:
+ *   sharpness: "5"      # Must be exactly level 5
+ *   unbreaking: "3+"    # Must be level 3 or higher
+ *   mending: "1"
+ *   protection: # anything
+ *   match_any_enchant: false # If false, item must have ALL defined enchants
+ * </pre>
+ */
 public record ConfigEnchantmentMatcher(Map<Enchantment, IntRange> targetEnchants, @Nullable IntRange globalRange,
                                        boolean matchAny) implements ValueMatcher<Map<Enchantment, Integer>> {
 
+    /**
+     * Parses a configuration section into an enchantment matcher.
+     *
+     * @param section The 'enchants' configuration section.
+     * @param matchAny Whether to require <b>all</b> listed enchants (false) or <b>at least one</b> (true).
+     *                 This is usually passed from the parent section (e.g. {@code match_any_enchant: true}).
+     * @return A matcher instance, or null if the section is empty/invalid.
+     */
     @Nullable
     public static ConfigEnchantmentMatcher parse(@NotNull ConfigurationSection section, boolean matchAny) {
         Map<Enchantment, IntRange> targets = new HashMap<>();

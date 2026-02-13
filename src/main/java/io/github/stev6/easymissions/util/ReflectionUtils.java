@@ -4,6 +4,8 @@ import com.google.common.reflect.ClassPath;
 import io.github.stev6.easymissions.registry.MissionTypeRegistry;
 import io.github.stev6.easymissions.type.MissionType;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -15,7 +17,14 @@ import java.util.logging.Logger;
 
 public class ReflectionUtils {
 
-    public static void registerAll(Class<?> simpleTypesClass, MissionTypeRegistry registry, String pkgPath, JavaPlugin plugin) {
+    /**
+     * Automatically register all your types in a package for you, may be unstable/or break, but it helps deduplicate code
+     * @param simpleTypesClass Your class containing the simple types if you wish to pass one or null if you don't have one
+     * @param registry An instance of the {@link MissionTypeRegistry} from an API method
+     * @param pkgPath The package containing all your type classes, like {@code example.example.example.types}
+     * @param plugin Instance of your plugin for logging and registering
+     */
+    public static void registerAll(@Nullable Class<?> simpleTypesClass, @NotNull MissionTypeRegistry registry, @NotNull String pkgPath, @NotNull JavaPlugin plugin) {
         Logger logger = plugin.getLogger();
 
         if (simpleTypesClass != null) {

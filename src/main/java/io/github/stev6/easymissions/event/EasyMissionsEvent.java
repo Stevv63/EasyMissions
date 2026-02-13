@@ -18,12 +18,16 @@
 
 package io.github.stev6.easymissions.event;
 
+import io.github.stev6.easymissions.EasyMissionsAPI;
 import io.github.stev6.easymissions.mission.Mission;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Abstract event for EasyMissions events
+ */
 public abstract class EasyMissionsEvent extends PlayerEvent {
     protected final ItemStack missionItem;
     protected final Mission mission;
@@ -34,11 +38,19 @@ public abstract class EasyMissionsEvent extends PlayerEvent {
         this.mission = mission;
     }
 
+    /**
+     * @return The {@link ItemStack} of the mission item
+     */
     @NotNull
     public ItemStack getMissionItem() {
         return this.missionItem;
     }
 
+    /**
+     * Gets the {@link Mission} object in the event, changes made to this object will not be reflected on the actual mission,
+     * to save your changes use the {@link EasyMissionsAPI#updateMissionData(ItemStack, Mission, boolean)} method on the mission item
+     * @return the {@link Mission} involved in the event
+     */
     @NotNull
     public Mission getMission() {
         return this.mission;

@@ -11,6 +11,18 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.function.Predicate;
 
+/**
+ * {@link ValueMatcher} that validates an {@link Entity} against multiple predicates.
+ * <p>
+ * This matcher checks (if configured):
+ * <ul>
+ *     <li>Entity Type (via {@link EnumMatcher})</li>
+ *     <li>Age (Adult or Baby)</li>
+ *     <li>Category (Monster check)</li>
+ *     <li>Equipment (Mainhand, Offhand, Armor - via {@link ItemDataMatcher})</li>
+ *     <li>PersistentDataContainer keys (PDC)</li>
+ * </ul>
+ */
 public class EntityDataMatcher implements ValueMatcher<Entity> {
     private final Predicate<Entity> predicate;
 
@@ -18,6 +30,13 @@ public class EntityDataMatcher implements ValueMatcher<Entity> {
         this.predicate = predicate;
     }
 
+    /**
+     * Parses a configuration section to create an EntityDataMatcher.
+     *
+     * @param section The configuration section (usually named 'entity')
+     * @return A new matcher instance.
+     * @throws ConfigException If 'adult' and 'baby' are both true, or if nested item matchers fail
+     */
     public static EntityDataMatcher parse(@NotNull ConfigurationSection section) {
         Predicate<Entity> predicate = Objects::nonNull;
 

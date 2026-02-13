@@ -24,6 +24,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.stev6.easymissions.EasyMissions;
 import io.github.stev6.easymissions.config.data.MissionConfig;
+import io.github.stev6.easymissions.event.MissionCreateEvent.Source;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -50,7 +51,7 @@ public final class RandomCommand extends EasyMissionsCommand {
         var manager = plugin.getMissionManager();
         List<Player> targets = ctx.getArgument("target", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource());
         MissionConfig config = manager.weightedRandomMission(plugin.getConfigManager().getMainConfig().categories());
-        for (Player target : targets) giveItem(ctx.getSource().getSender(), target, config);
+        for (Player target : targets) giveItem(ctx.getSource().getSender(), target, config, Source.RANDOM);
         return Command.SINGLE_SUCCESS;
     }
 }

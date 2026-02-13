@@ -24,6 +24,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.github.stev6.easymissions.EasyMissions;
 import io.github.stev6.easymissions.command.argument.CategoryArgument;
+import io.github.stev6.easymissions.event.MissionCreateEvent.Source;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -52,7 +53,7 @@ public final class CategoryRandomCommand extends EasyMissionsCommand {
         List<Player> targets = ctx.getArgument("target", PlayerSelectorArgumentResolver.class).resolve(ctx.getSource());
         var manager = plugin.getMissionManager();
         for (Player target : targets)
-            giveItem(ctx.getSource().getSender(), target, manager.categoryRandomMission(category));
+            giveItem(ctx.getSource().getSender(), target, manager.categoryRandomMission(category), Source.RANDOM_CATEGORY);
         return Command.SINGLE_SUCCESS;
     }
 }

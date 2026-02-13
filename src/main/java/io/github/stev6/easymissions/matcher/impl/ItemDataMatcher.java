@@ -4,6 +4,8 @@ import io.github.stev6.easymissions.exception.ConfigException;
 import io.github.stev6.easymissions.matcher.ValueMatcher;
 import io.github.stev6.easymissions.util.IntRange;
 import io.github.stev6.easymissions.util.ListenerUtils;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
@@ -15,6 +17,20 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.function.Predicate;
 
+/**
+ * {@link ValueMatcher} that validates an {@link ItemStack} against multiple predicates.
+ * <p>
+ * This matcher checks (if configured):
+ * <ul>
+ *     <li>Material type (via {@link EnumMatcher})</li>
+ *     <li>Stack amount (via {@link IntRange})</li>
+ *     <li>Item model (useful for custom items that have custom textures but no PDC keys)</li>
+ *     <li>Potion types (if the item is a potion/tipped arrow)</li>
+ *     <li>Enchantments (via {@link ConfigEnchantmentMatcher})</li>
+ *     <li>PersistentDataContainer keys (PDC)</li>
+ * </ul>
+ *
+ **/
 public class ItemDataMatcher implements ValueMatcher<ItemStack> {
 
     private final Predicate<ItemStack> predicate;
@@ -23,6 +39,13 @@ public class ItemDataMatcher implements ValueMatcher<ItemStack> {
         this.predicate = predicate;
     }
 
+    /**
+     * Parses a {@link ConfigurationSection} to create an ItemDataMatcher.
+     *
+     * @param section The configuration section (common convention to name its section "item" unless multiple can be set)
+     * @return A new matcher instance
+     * @throws ConfigException If configuration values (like materials or keys) are invalid
+     */
     public static ItemDataMatcher parse(@NotNull ConfigurationSection section) {
 
         Predicate<ItemStack> predicate = Objects::nonNull;
@@ -39,6 +62,16 @@ public class ItemDataMatcher implements ValueMatcher<ItemStack> {
             predicate = predicate.and(i -> {
                 PotionType type = ListenerUtils.getPotionTypeOrNull(i);
                 return type != null && matcher.matches(type);
+            });
+        }
+
+        HashSet<String> itemModels = new HashSet<>(section.getStringList("item_models"));
+        if (!itemModels.isEmpty()) {
+            predicate = predicate.and(i -> {
+                @SuppressWarnings("UnstableApiUsage")
+                Key itemModel = i.getData(DataComponentTypes.ITEM_MODEL);
+
+                return itemModel != null && itemModels.contains(itemModel.asString());
             });
         }
 
