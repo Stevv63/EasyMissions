@@ -156,15 +156,11 @@ Now there are some options and things that just cannot be defaulted to, such as 
 
 ### API
 ---
-The API section has its own wiki page that you may check out to learn more about how to interact with the plugin and do your own thing.
+The API section has its own section that you may check out to learn more about how to interact with the plugin and do your own thing.
 
-A quick overview of what the API allows you to do is:
+You may visit the API wiki section [**here**](https://github.com/Stevv63/EasyMissions/wiki#api-documentation)
 
-- **Events** As of now there is a `MissionClaimEvent` and `MissionProgressEvent` that you may listen to and cancel
-- **Custom Types** You can register your types by following the examples and using the type registry, just like native ones
-- **Custom Options** You can register your own options by following the examples and using the options registry
-
-And a lot of other methods that may help you
+The Javadocs are also available for most classes/methods you'll run into or work with.
 
 ### Ability to organize missions
 ----
