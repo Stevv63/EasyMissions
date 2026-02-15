@@ -152,7 +152,7 @@ So for example, you don't even have to make a custom lore for each config! just 
 
 You can list rewards and even inherit them using the `[REWARDS!]` in your mission config's rewards
 
-Now there are some options and things that just cannot be defaulted to, such as the type or the targets, the item model, its completed variant.
+Now there are some options and things that just cannot be defaulted to, such as the type or the targets.
 
 ### API
 ---
