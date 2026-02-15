@@ -19,9 +19,12 @@
 package io.github.stev6.easymissions.config.data;
 
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.inventory.ItemRarity;
 
 import java.util.List;
+import java.util.Optional;
 
 public record DefaultMission(
         String name,
@@ -32,6 +35,9 @@ public record DefaultMission(
         String category,
         ItemRarity itemRarity,
         Material itemMaterial,
+        Optional<NamespacedKey> itemModel,
+        Optional<NamespacedKey> completedItemModel,
+        Optional<ConfigurationSection> optionsSection,
         List<String> rewards,
         List<String> blacklistedWorlds) {
 }

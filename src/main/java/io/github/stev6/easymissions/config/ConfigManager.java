@@ -174,7 +174,7 @@ public class ConfigManager {
                 if (entry.getValue() < 0)
                     throw new ConfigException("Category '" + entry.getKey() + "' cannot have negative weight");
 
-            return Collections.unmodifiableMap(cats); // meow
+            return Map.copyOf(cats); // meow
         });
 
         MainConfig.Menus menus = withContext("Section: menus", () -> {
@@ -265,19 +265,31 @@ public class ConfigManager {
     private void parseDefaultMissionConfig(@NotNull ConfigurationSection missionSection) {
         String name = getConfigString(missionSection, "name");
         String completedName = getConfigString(missionSection, "completed_name");
-        List<String> lore = Collections.unmodifiableList(missionSection.getStringList("lore"));
-        List<String> completedLore = Collections.unmodifiableList(missionSection.getStringList("completed_lore"));
+        List<String> lore = List.copyOf(missionSection.getStringList("lore"));
+        List<String> completedLore = List.copyOf(missionSection.getStringList("completed_lore"));
         String requirement = getConfigString(missionSection, "requirement_range");
         String category = getConfigString(missionSection, "category");
         ItemRarity rarity = EnumUtils.getEnumIgnoreCase(ItemRarity.class, getConfigString(missionSection, "item_rarity"));
         if (rarity == null) throw new ConfigException("No item rarity set in default mission");
-
         Material material = Material.matchMaterial(getConfigString(missionSection, "item_material"));
         if (material == null) throw new ConfigException("No material set in default mission");
 
-        List<String> rewards = Collections.unmodifiableList(missionSection.getStringList("rewards"));
+        List<String> rewards = List.copyOf(missionSection.getStringList("rewards"));
 
-        List<String> worlds = Collections.unmodifiableList(missionSection.getStringList("blacklisted_worlds"));
+        List<String> worlds = List.copyOf(missionSection.getStringList("blacklisted_worlds"));
+
+        ConfigurationSection optionsSection = missionSection.getConfigurationSection("custom_options");
+
+        String modelStr = missionSection.getString("item_model");
+        String completedModelStr = missionSection.getString("completed_item_model");
+
+        Optional<NamespacedKey> itemModel = (modelStr == null || modelStr.isBlank())
+                ? Optional.empty()
+                : Optional.ofNullable(NamespacedKey.fromString(modelStr));
+
+        Optional<NamespacedKey> completedItemModel = (completedModelStr == null || completedModelStr.isBlank())
+                ? itemModel
+                : Optional.ofNullable(NamespacedKey.fromString(completedModelStr));
 
         var defaultMission = new DefaultMission(
                 name,
@@ -288,6 +300,9 @@ public class ConfigManager {
                 category,
                 rarity,
                 material,
+                itemModel,
+                completedItemModel,
+                Optional.ofNullable(optionsSection),
                 rewards,
                 worlds
         );
@@ -330,6 +345,9 @@ public class ConfigManager {
 
         ConfigurationSection optionsSection = missionSection.getConfigurationSection("custom_options");
         List<MissionOption> options = new ArrayList<>();
+
+        if (optionsSection == null) optionsSection = defaultMission.optionsSection().orElse(null);
+
         if (optionsSection != null) {
             for (String key : optionsSection.getKeys(false)) {
                 try {
@@ -363,18 +381,24 @@ public class ConfigManager {
                 .filter(Objects::nonNull)
                 .map(WorldInfo::getUID).collect(Collectors.toSet());
 
+        String task = missionSection.getString("task", "");
+
         String modelStr = missionSection.getString("item_model");
         String completedModelStr = missionSection.getString("completed_item_model");
 
-        String task = missionSection.getString("task", "");
 
-        Optional<NamespacedKey> itemModel = (modelStr == null || modelStr.isBlank())
-                ? Optional.empty()
-                : Optional.ofNullable(NamespacedKey.fromString(modelStr));
+        Optional<NamespacedKey> itemModel = defaultMission.itemModel();
+        Optional<NamespacedKey> completedItemModel = defaultMission.completedItemModel();
 
-        Optional<NamespacedKey> completedItemModel = (completedModelStr == null || completedModelStr.isBlank())
-                ? itemModel
-                : Optional.ofNullable(NamespacedKey.fromString(completedModelStr));
+        if (modelStr != null)
+            itemModel = modelStr.isBlank()
+                    ? Optional.empty()
+                    : Optional.ofNullable(NamespacedKey.fromString(modelStr));
+
+        if (completedModelStr != null)
+            completedItemModel = completedModelStr.isBlank()
+                    ? itemModel
+                    : Optional.ofNullable(NamespacedKey.fromString(completedModelStr));
 
         String matString = missionSection.getString("item_material");
         Material material = matString != null ? Material.matchMaterial(matString) : defaultMission.itemMaterial();
@@ -395,31 +419,30 @@ public class ConfigManager {
             throw new ConfigException("Invalid material '" + matString + "'");
 
         // make all collections immutable
-        lore = Collections.unmodifiableList(lore);
-        completedLore = Collections.unmodifiableList(completedLore);
-        rewards = Collections.unmodifiableList(rewards);
-        options = Collections.unmodifiableList(options);
-        blacklistedWorlds = Collections.unmodifiableSet(blacklistedWorlds);
-
+        var immutableLore = List.copyOf(lore);
+        var immutableCompletedLore = List.copyOf(completedLore);
+        var immutableRewards = List.copyOf(rewards);
+        var immutableOptions = List.copyOf(options);
+        var immutableBlacklistedWorlds = Set.copyOf(blacklistedWorlds);
 
         MissionConfig mission = new MissionConfig(
                 missionSection.getName().toLowerCase(Locale.ROOT),
                 name,
                 completedName,
-                lore,
-                completedLore,
+                immutableLore,
+                immutableCompletedLore,
                 category,
                 type,
                 task,
                 data,
-                options,
+                immutableOptions,
                 rarity,
                 range,
                 itemModel,
                 completedItemModel,
                 material,
-                rewards,
-                blacklistedWorlds
+                immutableRewards,
+                immutableBlacklistedWorlds
         );
 
         missions.put(mission.key(), mission);

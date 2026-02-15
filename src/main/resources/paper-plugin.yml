@@ -4,7 +4,7 @@ main: io.github.stev6.easymissions.EasyMissions
 api-version: '1.21'
 prefix: EasyMissions
 authors: [Stev6]
-description: Missions plugin.
+description: Configurable missions plugin.
 folia-supported: true
 permissions:
   easymissions.admin:

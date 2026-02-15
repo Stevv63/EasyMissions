@@ -1,74 +1,82 @@
-# EasyMissions - Mission config
-# Any valid mission config file in the missions folder/directory will work. Feel free to categorize by file
-# Each top-level key is stored on the mission item. Keep the keys short
-# Because of the above, existing mission items with missing entries will not work
-# For a full explanation and list of mission types, examples, and options, read the wiki and make sure to check default.yml
-# This file can be deleted when you have another .yml file in the directory, it will regenerate when there is no valid mission configs in the directory
+# EasyMissions - Example Mission Config
+#
+# This file demonstrates how to create missions. You can create multiple .yml files inside the 'missions' folder.
+# Each top level key (like "break_stone") is a unique mission config ID.
+# For a full explanation and tutorial of types, options, and placeholders, please check the wiki, also check the default.yml file.
 
-# Here is a mission that will utilize all possible options right now. Don't be afraid of how big it looks right now, it gets way shorter using defaults
+# EXAMPLE 1: A fully detailed mission explaining all possible fields.
+break_stone: # the top level key
 
-break_stone: # Mission top-level key
-  default: default # the default mission to use for this config, it defaults to the base one, but we can use any valid one
+  # Use a template from default.yml. If omitted, the base one named "default" is used.
+  default: default
 
   # Item display stuff
+
   name: "<gray>Stone Breaker</gray>" # Mission item display name
   completed_name: "<green>[NAME] (COMPLETED)</green>" # [NAME] will be replaced with the normal name
 
-  lore: # Mission item lore. Use <task> to display the description below, there are many other placeholders you may use, check the wiki
-    - "<task>"
+  lore: # The lore of the mission item
+    - "<task>" # The <task> placeholder displays the task specified below, useful when combined with default.yml's lore
     - ""
     - "<white>Progress: <green><progress></green>/<red><requirement></red></white>"
 
-  completed_lore: # Lore when completed, [LORE!] in the first line will make it the normal lore but strikethrough
+
+  completed_lore: # Lore when completed.
+    - "[LORE!]" # [LORE!] will add the lore above but strikethrough
+    - ""
     - "<gray>You have cleared the path.</gray>"
     - ""
     - "<gold>Right-click to claim!</gold>"
 
-  task: "Clear out the stone to make way for progress." # An objective of what to do to progress the mission, useful combined with default.yml
-  item_rarity: "COMMON" # The minecraft item rarity of the item (cosmetic only)
-  item_material: "PAPER" # The type of item for the mission. It's recommended to keep this at paper and use item_model to change its texture to avoid issues, https://jd.papermc.io/paper/1.21.11/org/bukkit/Material.html for valid materials
-  item_model: # Custom item model, leave empty or remove if you don't wish to have a custom texture, you can use existing textures like minecraft:stone too
-  completed_item_model: # Item model when completed, leave empty or remove to default to item model
+  # Item settings
+
+  task: "Clear out the stone to make way for progress." # Description of what to do to progress the mission
+  item_rarity: "COMMON" # COMMON, UNCOMMON, RARE, EPIC
+  item_material: "PAPER" # Any valid Bukkit Material. It's recommended to use PAPER and specify `item_model` for a custom texture.
+  item_model: # Sets a custom texture on the item. Can be empty to not use one.
+  completed_item_model: # Texture when completed, leave empty to default to item model
 
   # Mission settings
+
   category: "easy" # Must match a category in config.yml
-  type: "break" # Mission type, see wiki for list
-  requirement_range: 4-59 # the range (inclusive), has many tricks for you to use, check out below and the wiki to see them
+  type: "break" # The action required to progress. See wiki for a list.
+  requirement_range: 4-59 # A random requirement between 20 and 60 (inclusive). see wiki for more details on it.
   blacklisted_worlds: [ "world_the_nether" ] # Worlds that this mission will not progress on.
-  targets: # section to specify conditions for mission to progress, what you can have depends on the chosen type
+
+  # Conditions for the mission to progress. The available conditions depend on the `type` you set.
+  targets:
     materials:
       - "*STONE" # wildcard for any block ending with stone, you can also use exact names like STONE or COBBLESTONE
 
- # You may also omit the "targets:" section and directly set the conditions, it would be like this:
- # materials:
- #   - "*STONE"
-
+  # You may also omit the "targets:" section and directly set the conditions, it would be like this:
+  # materials:
+  #   - "*STONE"
 
   # Custom options are additional settings for your mission config, other plugins can add their own options for you
-  # An existing option is the permission one, it makes the mission only work for that permission or if you have one of the permissions
+  # a built-in option is `permission`, the mission only progresses for players with any of the permissions
   custom_options:
-    permission: # this is our custom option
+    permission: # this is our permission option
       values:
-        - "easymissions.break" # only players with this permission will be able to progress
+        - "easymissions.break" # players must have this permission.
 
   # Commands to run on mission claim.
   # "say" will send a message to the player, not the minecraft command
   # "minecraft:say" runs the real minecraft command
   # [REWARDS!] will execute the default rewards alongside your rewards if you put it
   rewards:
-    - "say <green>Good job, you completed the mission yayay!"
-    - "give <player> cobblestone 64"
+    - "say <green>Good job, you completed the mission yayay!" # send a message to the player
+    - "give <player> cobblestone 64" # give the player 64 cobblestone
 
 # Above is a full, functional mission with all options that should have a requirement between 4 and 59 and progresses when a player breaks any block ending with stone.
 # Additionally, you can configure the defaults of a mission to avoid repetition and allow for better readability. Check default.yml for that
 
-# To help you further, here are some more examples using the defaults:
+# EXAMPLE 2: short examples using the plugin's features like defaults
 
 lumberjack:
-  default: default_easy
+  default: default_easy # Use the default settings from "default_easy"
   type: break
   task: "Chop <requirement> logs"
-  materials: [ "*_LOG" ] # you may use targets: here but it will add more indentation, this is clearer
+  materials: [ "*_LOG" ] # you may use `targets:` here, but it will add more indentation, this is clearer for one condition set only
   rewards:
     - "[REWARDS!]" # inherit rewards from "default_easy" to get its success message
     - "give <player> iron_ingot 4"
@@ -137,7 +145,7 @@ monster_killer:
   type: kill
   requirement_range: 35-55
   entity:
-    monster: true # ensures only monsters count
+    monster: true # only monsters count
 
   rewards:
     - "[REWARDS!]"

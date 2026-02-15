@@ -1,33 +1,64 @@
 # EasyMissions default mission config
-# This is for missions with missing config entries and missing fields in mission configs.
-# You may edit anything you wish here, any missing fields in a mission config will get its field from here.
-# This file will be recreated each time it is deleted
-# Tip: you can add "[REWARDS!]" to your rewards in a mission config to add the rewards from the default mission to the one in your mission config.
-# The tip above allows for things like having a unified success message across multiple missions or a unified reward while having to write the command only once
+#
+# This file is where you define templates that other missions fall back to if they are missing specific fields.
+# For example, if a mission doesn't specify 'lore', it uses the lore defined here.
+#
+# You can define your own defaults, select a default for a mission by setting 'default' field to the top level key of your default.
+#
+# TAGS:
+# [REWARDS!] -> Put this in a mission's reward list to include the default rewards defined below.
+# [LORE!]    -> Put this in 'completed_lore' to automatically copy the normal 'lore', strike it through, and insert it there.
+# [NAME]     -> Can be used in 'completed_name' to include the original mission name.
 
+# The top level key of your default, must be unique
 default:
+
+  # The display name of the mission item
+  # A list of placeholders can be found at https://github.com/Stevv63/EasyMissions/wiki/Config-%7C-Placeholders
   name: "<gradient:#FFAA00:#FFE500><shadow:#000000:1><b><type_cap> Mission</b></shadow></gradient>"
+
+  # The display name when completed
   completed_name: "<green><bold>✔ COMPLETED</bold></green>"
 
+  # The lore of the mission item
   lore:
     - "<!i><shadow:#000000:1><white>Complete the mission to earn a</shadow>"
     - "<gradient:#ffaa00:#ffe100><shadow:#000000:1>reward</gradient><white>."
     - ""
     - "<color:#FFFC00><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FFAA00><progress></color>"
 
+  # The lore when completed
   completed_lore:
     - "<st><color:#FFFC00><shadow:#000000:1>✮ </color><white><task><gray>: <color:#FFAA00><progress></color></st>"
     - "<!i><#55aaff><shadow:#000000:1>Press <key:key.use> <color:#AAAAAA>to advance</color>"
 
+  # The requirement range.
+  # Can be a single number "10", a range "10-20", "10+" (10 to MAX), or "-10" (0 to 10).
   requirement_range: -50
+
+  # The default category. MUST exist in your config.yml 'categories' section.
   category: "easy"
-  item_rarity: "EPIC"
-  item_material: "PAPER"
-  blacklisted_worlds: [ ]
+
+  # Item settings
+  item_rarity: "EPIC"    # COMMON, UNCOMMON, RARE, EPIC
+  item_material: "PAPER" # Any valid Bukkit Material
+  item_model: "" # The texture of the item, leave empty or remove if you don't wish to have a custom texture
+  completed_item_model: "" # The texture of the item when completed, defaults to item_model if not set
+
+  # blacklisted_worlds: # The list of blacklisted worlds for the mission, uncomment it if you want to set
+  #   - "spawn_world"
+
+  # Default mission options (conditions) that apply to missions using this default
+  # custom_options:
+  #   permission:
+  #     values: [ "easymissions.default" ]
+
+  # Default rewards.
+  # Specific missions can inherit these by adding "[REWARDS!]" to their rewards list.
   rewards:
     - "say <gold><b>Congratulations!"
 
-# You may define your own defaults, the plugin will come with some premade ones for each category as a demonstration.
+# You can define your own defaults, the plugin will come with some premade ones for each category as a demonstration.
 
 default_easy:
   name: "<b><gradient:#0DFF00:#236A26><shadow:#000000:1>Easy Mission</shadow></gradient></b>"
@@ -47,7 +78,6 @@ default_easy:
   category: "easy"
   item_rarity: "COMMON"
   item_material: "PAPER"
-  blacklisted_worlds: [ ]
   rewards:
     - "say <dark_green><b>Amazing!"
 
@@ -70,7 +100,6 @@ default_medium:
   category: "medium"
   item_rarity: "RARE"
   item_material: "PAPER"
-  blacklisted_worlds: [ ]
   rewards:
     - "say <gold><b>Good job!"
 
@@ -93,6 +122,5 @@ default_hard:
   category: "hard"
   item_rarity: "EPIC"
   item_material: "PAPER"
-  blacklisted_worlds: [ ]
   rewards:
     - "say <red><b>Great job."
