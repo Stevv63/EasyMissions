@@ -104,8 +104,10 @@ public class MissionManager {
         i.setData(DataComponentTypes.RARITY, config.itemRarity());
         i.setData(DataComponentTypes.ITEM_NAME, Component.text("Easy Missions mission"));
         i.setData(DataComponentTypes.CUSTOM_NAME, displayName);
+
         var optionalModel = m.isCompleted() ? config.completedItemModel() : config.itemModel();
-        optionalModel.ifPresent(key -> i.setData(DataComponentTypes.ITEM_MODEL, key));
+        if (optionalModel != null) i.setData(DataComponentTypes.ITEM_MODEL, optionalModel);
+
         i.setData(DataComponentTypes.LORE, ItemLore.lore().lines(lore).build());
 
         return i;
@@ -161,8 +163,8 @@ public class MissionManager {
 
             if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
 
-            if (type instanceof TargetedMissionType<?, ?> targetedType && config.data().isPresent()) {
-                if (!targetedType.matchesRaw(config.data().get(), ctx)) continue;
+            if (type instanceof TargetedMissionType<?, ?> targetedType && config.data() != null) {
+                if (!targetedType.matchesRaw(config.data(), ctx)) continue;
             }
 
             ItemStack i = p.getInventory().getItem(slot);
@@ -174,6 +176,8 @@ public class MissionManager {
                 findFromInventory(p, type, ctx, doThing);
                 return;
             }
+
+            if (m.isCompleted()) continue;
 
             if (attemptMissionProgress(p, i, m, config, ctx, doThing)) return;
 
@@ -200,8 +204,8 @@ public class MissionManager {
 
             if (config.blacklistedWorlds().contains(p.getWorld().getUID())) continue;
 
-            if (type instanceof TargetedMissionType<?, ?> targetedType && config.data().isPresent()) {
-                if (!targetedType.matchesRaw(config.data().get(), ctx)) continue;
+            if (type instanceof TargetedMissionType<?, ?> targetedType && config.data() != null) {
+                if (!targetedType.matchesRaw(config.data(), ctx)) continue;
             }
 
             if (attemptMissionProgress(p, i, m, config, ctx, doThing)) return;
@@ -307,11 +311,8 @@ public class MissionManager {
         i.setData(DataComponentTypes.CUSTOM_NAME, displayName);
         i.setData(DataComponentTypes.LORE, ItemLore.lore().lines(lore).build());
 
-        var optionalModel = m.isCompleted() ? c.completedItemModel() : c.itemModel();
-        optionalModel.ifPresentOrElse(
-                key -> i.setData(DataComponentTypes.ITEM_MODEL, key),
-                () -> i.setData(DataComponentTypes.ITEM_MODEL, i.getType().getKey())
-        );
+        var model = m.isCompleted() ? c.completedItemModel() : c.itemModel();
+        i.setData(DataComponentTypes.ITEM_MODEL, Objects.requireNonNullElseGet(model, () -> i.getType().getKey()));
     }
 
     public void giveRewards(ItemStack i, Player p) {

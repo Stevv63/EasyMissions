@@ -20,6 +20,9 @@ package io.github.stev6.easymissions.exception;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ConfigException extends RuntimeException {
 
@@ -47,5 +50,40 @@ public class ConfigException extends RuntimeException {
         }
         sb.append("  Error: ").append(getMessage());
         return sb.toString();
+    }
+
+    public static void withContext(String context, Runnable action) {
+        try {
+            action.run();
+        } catch (ConfigException e) {
+            throw e.addContext(context);
+        } catch (Exception e) {
+            throw new ConfigException(e.getMessage(), e).addContext(context);
+        }
+    }
+
+    public void handleException(Logger logger, boolean stackTrace, String pluginVersion) {
+        final List<String> ERROR_HEADER = List.of(
+                "=======================================",
+                "         EasyMissions CONFIG ERROR     ",
+                "         Plugin version: " + pluginVersion,
+                "======================================="
+        );
+
+        ERROR_HEADER.forEach(logger::severe);
+        this.getFormattedMessage().lines().forEach(logger::severe);
+        logger.severe("=======================================");
+        if (stackTrace) logger.log(Level.SEVERE, "Stack trace:", this);
+        else logger.severe("Enable debug mode to see the stack trace.");
+    }
+
+    public static <T> T withContext(String context, Callable<T> action) {
+        try {
+            return action.call();
+        } catch (ConfigException e) {
+            throw e.addContext(context);
+        } catch (Exception e) {
+            throw new ConfigException(e.getMessage(), e).addContext(context);
+        }
     }
 }

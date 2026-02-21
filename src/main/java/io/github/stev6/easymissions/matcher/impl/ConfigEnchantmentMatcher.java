@@ -46,12 +46,12 @@ import java.util.Set;
  *
  * <h3>Config Example</h3>
  * <pre>
+ * match_any_enchant: false # If false, item must have ALL defined enchants.
  * enchants:
  *   sharpness: "5"      # Must be exactly level 5
  *   unbreaking: "3+"    # Must be level 3 or higher
  *   mending: "1"
  *   protection: # anything
- *   match_any_enchant: false # If false, item must have ALL defined enchants
  * </pre>
  */
 public record ConfigEnchantmentMatcher(Map<Enchantment, IntRange> targetEnchants, @Nullable IntRange globalRange,
