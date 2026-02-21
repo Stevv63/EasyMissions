@@ -98,9 +98,10 @@ public class ConfigManager {
             return false;
         }
 
+        if (!defaultsLoad) return false;
         boolean success = loadMissionFiles(missionDir, snapShot);
         missionsLoaded = true;
-        return success && defaultsLoad;
+        return success;
     }
 
     private boolean loadDefaultMissions(File defaultMission) {
