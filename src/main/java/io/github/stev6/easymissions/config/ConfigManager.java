@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,6 +84,8 @@ public class ConfigManager {
             return false;
         }
         Map<String, MissionConfig> snapShot = new HashMap<>(missions);
+        Map<String, DefaultMission> defaultSnapShot = new HashMap<>(defaultMissions);
+
         missions.clear();
         defaultMissions.clear();
         missionsLoaded = false;
@@ -92,20 +95,33 @@ public class ConfigManager {
 
         boolean defaultsLoad;
         try {
-            defaultsLoad = withContext("Loading default missions", () -> loadDefaultMissions(defaultConfig));
+            defaultsLoad = withContext("Loading default missions", () -> loadDefaultMissions(defaultConfig, defaultSnapShot));
         } catch (ConfigException e) {
             e.handleException(plugin.getLogger(), plugin.isDebug(), plugin.getPluginMeta().getVersion());
+            restoreSnapshots(snapShot, defaultSnapShot);
             return false;
         }
 
-        if (!defaultsLoad) return false;
-        boolean success = loadMissionFiles(missionDir, snapShot);
+        if (!defaultsLoad) {
+            restoreSnapshots(snapShot, defaultSnapShot);
+            return false;
+        }
+        AtomicBoolean criticalErr = new AtomicBoolean(false);
+        boolean success = loadMissionFiles(missionDir, snapShot, criticalErr);
+
+        if (criticalErr.get()) {
+            restoreSnapshots(snapShot, defaultSnapShot);
+            return false;
+        }
+
         missionsLoaded = true;
         return success;
     }
 
-    private boolean loadDefaultMissions(File defaultMission) {
+    private boolean loadDefaultMissions(File defaultMission, Map<String, DefaultMission> defaultSnapShot) {
         YamlConfiguration cfg = YamlConfiguration.loadConfiguration(defaultMission);
+        boolean error = false;
+
         try {
             withContext("Base Default", () -> {
                 ConfigurationSection sec = cfg.getConfigurationSection("default");
@@ -114,10 +130,18 @@ public class ConfigManager {
             });
         } catch (ConfigException e) {
             e.handleException(plugin.getLogger(), plugin.isDebug(), plugin.getPluginMeta().getVersion());
-            return false;
+            error = true;
+            var snap = defaultSnapShot.get("default");
+            if (snap != null) {
+                plugin.getLogger().warning("Using old version of base default.");
+                defaultMissions.put("default", snap);
+            } else {
+                plugin.getLogger().severe("No snapshot available for base default. Stopping.");
+                return false;
+            }
         }
 
-        boolean error = false;
+
         DefaultMission baseDefault = defaultMissions.get("default");
 
         for (String k : cfg.getKeys(false)) {
@@ -130,15 +154,23 @@ public class ConfigManager {
                 } catch (ConfigException e) {
                     error = true;
                     e.handleException(plugin.getLogger(), plugin.isDebug(), plugin.getPluginMeta().getVersion());
-                    plugin.getLogger().warning("Failed to parse default mission '" + k + "'. Using base default as fallback.");
-                    defaultMissions.put(k.toLowerCase(Locale.ROOT), defaultMissions.get("default"));
+                    plugin.getLogger().warning("Failed to parse default mission '" + k + "'. Attempting fallback.");
+
+                    var snap = defaultSnapShot.get(k.toLowerCase(Locale.ROOT));
+                    if (snap != null) {
+                        plugin.getLogger().warning("Using old version of default mission '" + k + "'.");
+                        defaultMissions.put(k.toLowerCase(Locale.ROOT), snap);
+                    } else {
+                        plugin.getLogger().warning("No snapshot available. Using base default as fallback.");
+                        defaultMissions.put(k.toLowerCase(Locale.ROOT), defaultMissions.get("default"));
+                    }
                 }
             }
         }
         return !error;
     }
 
-    private boolean loadMissionFiles(File missionDir, Map<String, MissionConfig> snapShot) {
+    private boolean loadMissionFiles(File missionDir, Map<String, MissionConfig> snapShot, AtomicBoolean criticalErr) {
         boolean error = false;
         List<File> filesToLoad;
 
@@ -151,6 +183,7 @@ public class ConfigManager {
                     .collect(Collectors.toCollection(ArrayList::new));
         } catch (IOException e) {
             plugin.getLogger().severe("Error reading mission directory: " + e.getMessage());
+            criticalErr.set(true);
             return false;
         }
 
@@ -193,15 +226,24 @@ public class ConfigManager {
                 ERROR_HEADER.forEach(plugin.getLogger()::severe);
                 plugin.getLogger().severe("File: " + file.getName());
                 plugin.getLogger().severe("Error: " + e.getMessage());
-
                 plugin.getLogger().severe("============================================================");
                 if (plugin.isDebug()) plugin.getLogger().log(Level.SEVERE, "Stack trace:", e);
                 else plugin.getLogger().severe("Enable debug mode to see the stack trace.");
+                if (!criticalErr.get()) criticalErr.set(true);
                 error = true;
             }
         }
 
         return !error;
+    }
+
+    private void restoreSnapshots(Map<String, MissionConfig> missionSnap, Map<String, DefaultMission> defaultSnap) {
+        if (missionSnap.isEmpty() && defaultSnap.isEmpty()) return;
+
+        missions.putAll(missionSnap);
+        defaultMissions.putAll(defaultSnap);
+        missionsLoaded = true;
+        plugin.getLogger().warning("Restored working missions and defaults due to config errors.");
     }
 
     private void parseMissionConfig(@NotNull ConfigurationSection missionSection) {
