@@ -152,17 +152,17 @@ public record MissionConfig(
         }
 
         String modelStr = section.getString("item_model");
-        NamespacedKey itemModel = (modelStr != null && !modelStr.isBlank())
-                ? NamespacedKey.fromString(modelStr)
-                : def.itemModel();
+        NamespacedKey itemModel;
+
+        if (modelStr == null) itemModel = def.itemModel();
+        else if (modelStr.isBlank()) itemModel = null;
+        else itemModel = NamespacedKey.fromString(modelStr);
 
         String compModelStr = section.getString("completed_item_model");
         NamespacedKey completedItemModel;
-        if (compModelStr != null && !compModelStr.isBlank()) {
-            completedItemModel = NamespacedKey.fromString(compModelStr);
-        } else {
-            completedItemModel = (def.completedItemModel() != null) ? def.completedItemModel() : itemModel;
-        }
+        if (compModelStr == null) completedItemModel = def.completedItemModel();
+        else if (compModelStr.isBlank()) completedItemModel = null;
+        else completedItemModel = NamespacedKey.fromString(compModelStr);
 
         String rangeStr = resolve(section.getString("requirement_range"), def.requirementRange(), "requirement_range", defName);
 
