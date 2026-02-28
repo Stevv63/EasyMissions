@@ -37,7 +37,7 @@ import java.util.Map;
 @SuppressWarnings("UnstableApiUsage")
 public class ListenerUtils {
 
-    public static final int SUGARCANE_CACTUS_MAX = 3;
+    public static final int SUGARCANE_CACTUS_MAX = 6;
     public static final int BAMBOO_MAX = 16;
     public static final int CHORUS_MAX = 64; // just a safe limit
 

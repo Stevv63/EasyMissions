@@ -253,6 +253,8 @@ public class ConfigManager {
             throw new ConfigException("Default mission: " + defaultMissionStr + " does not exist");
 
         MissionConfig mission = MissionConfig.parse(missionSection, defaultMission, defaultMissionStr, plugin);
+        if (missions.containsKey(mission.key()))
+            throw new ConfigException("Mission key '" + mission.key() + "' already exists.");
         missions.put(mission.key(), mission);
     }
 }
