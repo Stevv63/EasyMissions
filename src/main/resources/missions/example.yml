@@ -33,8 +33,8 @@ break_stone: # the top level key
   task: "Clear out the stone to make way for progress." # Description of what to do to progress the mission
   item_rarity: "COMMON" # COMMON, UNCOMMON, RARE, EPIC
   item_material: "PAPER" # Any valid Bukkit Material. It's recommended to use PAPER and specify `item_model` for a custom texture.
-  item_model: # Sets a custom texture on the item. Can be empty to not use one.
-  completed_item_model: # Texture when completed, leave empty to default to item model
+  item_model: "" # Sets a custom texture on the item. Can be empty to not use one.
+  completed_item_model: "" # Texture when completed, leave empty to default to item model
 
   # Mission settings
 
