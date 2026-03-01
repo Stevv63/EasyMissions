@@ -22,15 +22,14 @@
 ## Some things you need to know, Please read.
 To begin:
 
-Due to the current stability state of EasyMissions which is.. now **beta!**, the previous alpha warning is mostly invalid, stability is not a guarantee due to it not being release yet obviously but it means we are close, and it shouldn't be too bad I think
-
-Breaking changes will be noted in each release.
+Due to the current stability state of EasyMissions which is actually now **released!** the plugin can now be used normally.
+Breaking changes will be noted in each release if there are any.
 
 Now for the important details about how this works:
 
 When a mission item is created, it's **linked to the config entry it belongs to**.
 
-This idea has both good and bad. On one hand, it's insanely easy to *brick* **ALL** missions belonging to the config entry if the config entry is missing or broken. On the other hand, this design allows for control over all missions and makes it possible to go back and fix your mistakes or push updates globally.
+This idea has both good and bad. On one hand, it's possible to **brick** missions belonging to the config entry if the config entry is missing or broken. On the other hand, this design allows for control over all missions and makes it possible to go back and fix your mistakes or push updates globally.
 
 And so here comes the benefits:
 
@@ -52,7 +51,7 @@ Due to the goals of EasyMissions, there is **NO** older version support, no spig
 
 - PaperMC and probably most of its derivatives/forks
 - FoliaMC (Considered unstable, race conditions might exist, and I'm not familiar with folia that much, but I can tell you it starts and I didn't run into any issues so far)
-- At least 1.21.5 Minecraft version (This is according to the PaperMC diff, the minimum version I tested it on was FoliaMC 1.21.8)
+- At least 1.21.5 Minecraft version (This is according to the PaperMC diff, the minimum version I tested it on was FoliaMC 1.21.8)  
 -----
 
 #### Now that we've gone through the base and if you are still interested, let's take a look at what this thing really offers.
