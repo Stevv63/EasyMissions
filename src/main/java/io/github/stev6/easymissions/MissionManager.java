@@ -220,16 +220,17 @@ public class MissionManager {
             C ctx,
             Consumer<Mission> doThing) {
         try {
+            Mission optionClone = Mission.recreate(m.getConfigID(), m.getRequirement(), m.isCompleted(), m.getProgress(), m.getUUID());
             for (MissionOption option : config.options()) {
-                if (!option.check(p, m, i, ctx)) return false;
+                if (!option.check(p, optionClone, i, ctx)) return false;
             }
 
             int oldProgress = m.getProgress();
             boolean oldCompleted = m.isCompleted();
 
             doThing.accept(m);
-
-            MissionProgressEvent event = new MissionProgressEvent(p, m, i, oldProgress, m.getProgress());
+            Mission eventClone = Mission.recreate(m.getConfigID(), m.getRequirement(), m.isCompleted(), m.getProgress(), m.getUUID());
+            MissionProgressEvent event = new MissionProgressEvent(p, eventClone, i, oldProgress, m.getProgress());
             if (!event.callEvent()) {
                 m.setProgress(oldProgress);
                 return false;

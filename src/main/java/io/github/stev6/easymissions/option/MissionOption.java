@@ -29,6 +29,7 @@ import io.github.stev6.easymissions.type.MissionType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -57,5 +58,5 @@ public interface MissionOption {
      * @param context the passed mission context, may or may not be an instance of {@link Locatable}
      * @return whether this condition is met or not.
      */
-    boolean check(@NotNull Player player, @NotNull Mission mission, @NotNull ItemStack item, @NotNull MissionContext context);
+    boolean check(@NotNull Player player, @NotNull Mission mission, @NotNull ItemStack item, @Nullable MissionContext context);
 }
