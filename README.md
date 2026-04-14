@@ -1,8 +1,6 @@
 <div align="center">
 <h1>EasyMissions – Missions / Scrolls Plugin</h1> 
 
-> **NOTE:** This plugin is in **beta**, there may be bugs present.
-
 #### A PaperMC missions plugin aiming to use the latest Paper APIs while staying configurable, supporting FoliaMC (Unstable), performant (I wish), and easy to work with.
 </div>
 
